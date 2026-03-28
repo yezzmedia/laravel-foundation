@@ -94,7 +94,26 @@ it('builds custom rate limit keys from a custom context value', function (): voi
         'custom' => 'contact:de',
     ]);
 
-    expect($key)->toBe('forms.submit:custom:contact:de');
+    expect($key)->toBe('forms.submit:custom:contact%3Ade');
+});
+
+it('escapes separator characters in dynamic rate limit segments', function (): void {
+    $definition = new RateLimitDefinition(
+        key: 'ops:login',
+        package: 'yezzmedia/laravel-ops',
+        description: 'Protect admin logins.',
+        maxAttempts: 5,
+        decaySeconds: 60,
+        scope: 'ip_user',
+        keyStrategy: 'ip-and-user',
+    );
+
+    $key = (new RateLimitKeyFactory)->make($definition, [
+        'ip' => '203.0.113.42:edge',
+        'user' => 'admin%example.com',
+    ]);
+
+    expect($key)->toBe('ops%3Alogin:ip_user:203.0.113.42%3Aedge:admin%25example.com');
 });
 
 it('rejects missing required rate limit context', function (): void {

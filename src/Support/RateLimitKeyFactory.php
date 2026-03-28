@@ -9,21 +9,20 @@ use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 
 class RateLimitKeyFactory
 {
+    private const SEPARATOR = ':';
+
     /**
      * @param  array<string, mixed>  $context
      */
     public function make(RateLimitDefinition $definition, array $context): string
     {
+        $key = $this->normalize($definition->key, 'key');
+
         return match ($definition->scope) {
-            'ip' => sprintf('%s:ip:%s', $definition->key, $this->contextValue($context, 'ip')),
-            'user' => sprintf('%s:user:%s', $definition->key, $this->contextValue($context, 'user')),
-            'ip_user' => sprintf(
-                '%s:ip_user:%s:%s',
-                $definition->key,
-                $this->contextValue($context, 'ip'),
-                $this->contextValue($context, 'user'),
-            ),
-            'custom' => sprintf('%s:custom:%s', $definition->key, $this->customValue($context)),
+            'ip' => implode(self::SEPARATOR, [$key, 'ip', $this->contextValue($context, 'ip')]),
+            'user' => implode(self::SEPARATOR, [$key, 'user', $this->contextValue($context, 'user')]),
+            'ip_user' => implode(self::SEPARATOR, [$key, 'ip_user', $this->contextValue($context, 'ip'), $this->contextValue($context, 'user')]),
+            'custom' => implode(self::SEPARATOR, [$key, 'custom', $this->customValue($context)]),
             default => throw new InvalidPackageDefinitionException(sprintf(
                 'Rate limiter [%s] has unsupported scope [%s].',
                 $definition->key,
@@ -47,7 +46,7 @@ class RateLimitKeyFactory
             throw new InvalidPackageDefinitionException(sprintf('Rate limit context [%s] must not be empty.', $key));
         }
 
-        return $value;
+        return $this->normalize($value, $key);
     }
 
     /**
@@ -74,6 +73,23 @@ class RateLimitKeyFactory
             throw new InvalidPackageDefinitionException('Rate limit custom segments must not be empty.');
         }
 
-        return implode(':', $segments);
+        return implode(self::SEPARATOR, array_map(
+            fn (string $segment): string => $this->normalize($segment, 'segment'),
+            $segments,
+        ));
+    }
+
+    private function normalize(string $value, string $name): string
+    {
+        $normalized = trim($value);
+
+        if ($normalized === '') {
+            throw new InvalidPackageDefinitionException(sprintf('Rate limit %s must not be empty.', $name));
+        }
+
+        return strtr($normalized, [
+            '%' => '%25',
+            self::SEPARATOR => '%3A',
+        ]);
     }
 }

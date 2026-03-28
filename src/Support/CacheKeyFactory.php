@@ -8,6 +8,8 @@ use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 
 class CacheKeyFactory
 {
+    private const SEPARATOR = ':';
+
     /**
      * @param  array<int, string|int>  $segments
      */
@@ -24,7 +26,7 @@ class CacheKeyFactory
             $parts[] = $this->normalize((string) $segment, 'segment');
         }
 
-        return implode(':', $parts);
+        return implode(self::SEPARATOR, $parts);
     }
 
     private function normalize(string $value, string $name): string
@@ -35,6 +37,9 @@ class CacheKeyFactory
             throw new InvalidPackageDefinitionException(sprintf('Cache key %s must not be empty.', $name));
         }
 
-        return $normalized;
+        return strtr($normalized, [
+            '%' => '%25',
+            self::SEPARATOR => '%3A',
+        ]);
     }
 }

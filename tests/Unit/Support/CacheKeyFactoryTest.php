@@ -17,6 +17,12 @@ it('trims cache key values and supports numeric segments', function (): void {
     expect($key)->toBe('website:navigation:tree:main:de:42');
 });
 
+it('escapes separator characters in cache key segments', function (): void {
+    $key = (new CacheKeyFactory)->make('nav:core', 'tree%main', 'left:rail', ['de:public']);
+
+    expect($key)->toBe('website:nav%3Acore:tree%25main:left%3Arail:de%3Apublic');
+});
+
 it('rejects empty cache key parts', function (): void {
     (new CacheKeyFactory)->make('navigation', '', 'main');
 })->throws(InvalidPackageDefinitionException::class);

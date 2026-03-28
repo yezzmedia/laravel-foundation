@@ -56,7 +56,7 @@ it('returns a successful empty result when no install steps are registered', fun
         ->and($result->messages)->toBe(['No install steps were available.'])
         ->and($result->context)->toBeNull();
 
-    Event::assertDispatched(WebsiteInstalled::class);
+    Event::assertDispatched(WebsiteInstalled::class, static fn (WebsiteInstalled $event): bool => $event->status === 'success' && $event->executedStepCount === 0 && $event->failedStepCount === 0 && $event->context === null);
 });
 
 it('fails fast when an install step throws', function (): void {
@@ -214,7 +214,7 @@ it('dispatches website installed only on successful runs', function (): void {
 
     expect($result->status)->toBe('success');
 
-    Event::assertDispatched(WebsiteInstalled::class);
+    Event::assertDispatched(WebsiteInstalled::class, static fn (WebsiteInstalled $event): bool => $event->status === 'success' && $event->executedStepCount === 1 && $event->failedStepCount === 0);
 });
 
 it('rejects install steps that belong to another package', function (): void {

@@ -32,8 +32,9 @@ class DoctorManager
     public function run(): Collection
     {
         $results = $this->results();
+        $summary = $this->summary($results);
 
-        event(new DoctorChecksCompleted($results, $this->summary($results)));
+        event(new DoctorChecksCompleted($summary));
 
         return $results;
     }

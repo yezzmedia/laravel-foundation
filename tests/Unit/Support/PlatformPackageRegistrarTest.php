@@ -34,8 +34,8 @@ it('registers package metadata and features through the registrar', function ():
     expect(app(PackageRegistry::class)->has('yezzmedia/laravel-content'))->toBeTrue()
         ->and(app(FeatureRegistry::class)->has('content.pages'))->toBeTrue();
 
-    Event::assertDispatched(PackageRegistered::class);
-    Event::assertDispatched(FeatureRegistered::class);
+    Event::assertDispatched(PackageRegistered::class, static fn (PackageRegistered $event): bool => $event->packageName === 'yezzmedia/laravel-content');
+    Event::assertDispatched(FeatureRegistered::class, static fn (FeatureRegistered $event): bool => $event->featureName === 'content.pages' && $event->packageName === 'yezzmedia/laravel-content');
 });
 
 it('does not register features for disabled packages', function (): void {
@@ -123,8 +123,8 @@ it('registers permissions and ops modules through the registrar', function (): v
     expect(app(PermissionRegistry::class)->all()->pluck('name')->all())->toBe(['ops.audit.view'])
         ->and(app(OpsModuleRegistry::class)->all()->pluck('key')->all())->toBe(['ops.audit']);
 
-    Event::assertDispatched(PermissionDefined::class);
-    Event::assertDispatched(OpsModuleDefined::class);
+    Event::assertDispatched(PermissionDefined::class, static fn (PermissionDefined $event): bool => $event->permissionName === 'ops.audit.view' && $event->packageName === 'yezzmedia/laravel-ops');
+    Event::assertDispatched(OpsModuleDefined::class, static fn (OpsModuleDefined $event): bool => $event->moduleKey === 'ops.audit' && $event->packageName === 'yezzmedia/laravel-ops');
 });
 
 it('validates audit, rate limit, and cache declarations during package registration', function (): void {

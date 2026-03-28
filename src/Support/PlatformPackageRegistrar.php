@@ -46,7 +46,7 @@ class PlatformPackageRegistrar
 
         $this->packages->register($metadata);
 
-        event(new PackageRegistered($metadata));
+        event(new PackageRegistered($metadata->name));
 
         if (! $metadata->enabled) {
             return;
@@ -59,7 +59,7 @@ class PlatformPackageRegistrar
                 $this->ensureValidFeatureDefinition($metadata, $featureDefinition);
                 $this->features->register($featureDefinition);
 
-                event(new FeatureRegistered($featureDefinition));
+                event(new FeatureRegistered($featureDefinition->name, $featureDefinition->package));
             }
         }
 
@@ -68,7 +68,7 @@ class PlatformPackageRegistrar
                 $this->ensureValidPermissionDefinition($metadata, $permissionDefinition);
                 $this->permissions->register($permissionDefinition);
 
-                event(new PermissionDefined($permissionDefinition));
+                event(new PermissionDefined($permissionDefinition->name, $permissionDefinition->package));
             }
         }
 
@@ -77,7 +77,7 @@ class PlatformPackageRegistrar
                 $this->ensureValidOpsModuleDefinition($metadata, $opsModuleDefinition);
                 $this->opsModules->register($opsModuleDefinition);
 
-                event(new OpsModuleDefined($opsModuleDefinition));
+                event(new OpsModuleDefined($opsModuleDefinition->key, $opsModuleDefinition->package));
             }
         }
 

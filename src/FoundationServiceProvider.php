@@ -10,6 +10,8 @@ use YezzMedia\Foundation\Console\WebsiteDoctorCommand;
 use YezzMedia\Foundation\Console\WebsiteFeaturesCommand;
 use YezzMedia\Foundation\Console\WebsiteInstallCommand;
 use YezzMedia\Foundation\Console\WebsitePackagesCommand;
+use YezzMedia\Foundation\Contracts\ResolvesSiteContext;
+use YezzMedia\Foundation\Data\SiteContext;
 use YezzMedia\Foundation\Doctor\DoctorManager;
 use YezzMedia\Foundation\Install\InstallManager;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
@@ -17,6 +19,7 @@ use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
 use YezzMedia\Foundation\Support\CacheKeyFactory;
+use YezzMedia\Foundation\Support\IntegrationManager;
 use YezzMedia\Foundation\Support\PackageManifestLoader;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 use YezzMedia\Foundation\Support\RateLimitKeyFactory;
@@ -39,6 +42,26 @@ class FoundationServiceProvider extends PackageServiceProvider
         $this->app->singleton(PackageManifestLoader::class, static fn (): PackageManifestLoader => new PackageManifestLoader);
         $this->app->singleton(CacheKeyFactory::class, static fn (): CacheKeyFactory => new CacheKeyFactory);
         $this->app->singleton(RateLimitKeyFactory::class, static fn (): RateLimitKeyFactory => new RateLimitKeyFactory);
+        $this->app->singleton(IntegrationManager::class, function (): IntegrationManager {
+            return new IntegrationManager(
+                packages: $this->app->make(PackageRegistry::class),
+                features: $this->app->make(FeatureRegistry::class),
+            );
+        });
+        $this->app->singleton(ResolvesSiteContext::class, function (): ResolvesSiteContext {
+            return new class implements ResolvesSiteContext
+            {
+                public function resolve(): SiteContext
+                {
+                    $locale = config('app.locale');
+
+                    return new SiteContext(
+                        environment: app()->environment(),
+                        locale: is_string($locale) ? $locale : null,
+                    );
+                }
+            };
+        });
 
         $this->app->singleton(PlatformPackageRegistrar::class, function (): PlatformPackageRegistrar {
             return new PlatformPackageRegistrar(

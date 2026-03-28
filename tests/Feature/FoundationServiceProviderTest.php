@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use YezzMedia\Foundation\Contracts\ResolvesSiteContext;
+use YezzMedia\Foundation\Data\SiteContext;
 use YezzMedia\Foundation\Doctor\DoctorManager;
 use YezzMedia\Foundation\Install\InstallManager;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
@@ -9,6 +11,7 @@ use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
 use YezzMedia\Foundation\Support\CacheKeyFactory;
+use YezzMedia\Foundation\Support\IntegrationManager;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 use YezzMedia\Foundation\Support\RateLimitKeyFactory;
 
@@ -20,6 +23,8 @@ it('registers the core foundation bindings', function (): void {
         ->and(app(PlatformPackageRegistrar::class))->toBeInstanceOf(PlatformPackageRegistrar::class)
         ->and(app(InstallManager::class))->toBeInstanceOf(InstallManager::class)
         ->and(app(DoctorManager::class))->toBeInstanceOf(DoctorManager::class)
+        ->and(app(IntegrationManager::class))->toBeInstanceOf(IntegrationManager::class)
+        ->and(app(ResolvesSiteContext::class)->resolve())->toBeInstanceOf(SiteContext::class)
         ->and(app(CacheKeyFactory::class))->toBeInstanceOf(CacheKeyFactory::class)
         ->and(app(RateLimitKeyFactory::class))->toBeInstanceOf(RateLimitKeyFactory::class);
 });

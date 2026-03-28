@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace YezzMedia\Foundation\Events;
 
-use YezzMedia\Foundation\Data\FeatureDefinition;
-
 final readonly class FeatureRegistered
 {
-    public function __construct(public FeatureDefinition $feature) {}
+    public function __construct(
+        public string $featureName,
+        public string $packageName,
+    ) {}
 }

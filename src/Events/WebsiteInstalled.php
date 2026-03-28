@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace YezzMedia\Foundation\Events;
 
-use YezzMedia\Foundation\Data\InstallResult;
-
 final readonly class WebsiteInstalled
 {
-    public function __construct(public InstallResult $result) {}
+    /**
+     * @param  array<string, mixed>|null  $context
+     */
+    public function __construct(
+        public string $status,
+        public int $executedStepCount,
+        public int $failedStepCount,
+        public ?array $context = null,
+    ) {}
 }

@@ -64,7 +64,12 @@ class InstallManager
         );
 
         if ($result->status === 'success') {
-            event(new WebsiteInstalled($result));
+            event(new WebsiteInstalled(
+                status: $result->status,
+                executedStepCount: count($result->executedSteps),
+                failedStepCount: count($result->failedSteps),
+                context: $result->context,
+            ));
         }
 
         return $result;

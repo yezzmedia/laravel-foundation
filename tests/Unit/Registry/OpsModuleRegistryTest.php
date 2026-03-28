@@ -35,3 +35,11 @@ it('returns an empty collection for unknown packages', function (): void {
 
     expect($registry->forPackage('yezzmedia/laravel-missing'))->toHaveCount(0);
 });
+
+it('rejects registration after the ops module registry is sealed', function (): void {
+    $registry = new OpsModuleRegistry;
+
+    $registry->seal();
+
+    $registry->register(new OpsModuleDefinition('redirects.loop-report', 'yezzmedia/laravel-ops', 'Loop report', 'page'));
+})->throws(InvalidPackageDefinitionException::class, 'Ops module registry is sealed.');

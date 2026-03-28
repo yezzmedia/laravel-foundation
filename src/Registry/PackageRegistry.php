@@ -15,8 +15,12 @@ class PackageRegistry
      */
     private array $packages = [];
 
+    private bool $sealed = false;
+
     public function register(PackageMetadata $package): void
     {
+        $this->ensureNotSealed();
+
         if ($package->name === '') {
             throw new InvalidPackageDefinitionException('Package name must not be empty.');
         }
@@ -44,5 +48,17 @@ class PackageRegistry
     public function has(string $name): bool
     {
         return isset($this->packages[$name]);
+    }
+
+    public function seal(): void
+    {
+        $this->sealed = true;
+    }
+
+    private function ensureNotSealed(): void
+    {
+        if ($this->sealed) {
+            throw new InvalidPackageDefinitionException('Package registry is sealed.');
+        }
     }
 }

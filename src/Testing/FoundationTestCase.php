@@ -21,5 +21,6 @@ abstract class FoundationTestCase extends Orchestra
         $app['config']->set('cache.default', 'array');
         $app['config']->set('session.driver', 'array');
         $app['config']->set('queue.default', 'sync');
+        $app['config']->set('foundation.registry.seal_after_boot', false);
     }
 }

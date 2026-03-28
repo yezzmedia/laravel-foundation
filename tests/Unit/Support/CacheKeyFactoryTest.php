@@ -23,6 +23,12 @@ it('escapes separator characters in cache key segments', function (): void {
     expect($key)->toBe('website:nav%3Acore:tree%25main:left%3Arail:de%3Apublic');
 });
 
+it('uses configured prefixes and separators when provided', function (): void {
+    $key = (new CacheKeyFactory(prefix: 'foundation', separator: '|'))->make('navigation', 'tree', 'main', ['de|public']);
+
+    expect($key)->toBe('foundation|navigation|tree|main|de%7Cpublic');
+});
+
 it('rejects empty cache key parts', function (): void {
     (new CacheKeyFactory)->make('navigation', '', 'main');
 })->throws(InvalidPackageDefinitionException::class);

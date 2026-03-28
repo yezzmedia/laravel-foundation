@@ -15,8 +15,12 @@ class OpsModuleRegistry
      */
     private array $modules = [];
 
+    private bool $sealed = false;
+
     public function register(OpsModuleDefinition $module): void
     {
+        $this->ensureNotSealed();
+
         if ($module->key === '') {
             throw new InvalidPackageDefinitionException('Ops module key must not be empty.');
         }
@@ -44,5 +48,17 @@ class OpsModuleRegistry
         return $this->all()
             ->filter(static fn (OpsModuleDefinition $module): bool => $module->package === $package)
             ->values();
+    }
+
+    public function seal(): void
+    {
+        $this->sealed = true;
+    }
+
+    private function ensureNotSealed(): void
+    {
+        if ($this->sealed) {
+            throw new InvalidPackageDefinitionException('Ops module registry is sealed.');
+        }
     }
 }

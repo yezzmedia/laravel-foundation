@@ -8,7 +8,10 @@ use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 
 class CacheKeyFactory
 {
-    private const SEPARATOR = ':';
+    public function __construct(
+        private readonly string $prefix = 'website',
+        private readonly string $separator = ':',
+    ) {}
 
     /**
      * @param  array<int, string|int>  $segments
@@ -16,7 +19,7 @@ class CacheKeyFactory
     public function make(string $package, string $domain, string $key, array $segments = []): string
     {
         $parts = [
-            'website',
+            $this->normalize($this->prefix, 'prefix'),
             $this->normalize($package, 'package'),
             $this->normalize($domain, 'domain'),
             $this->normalize($key, 'key'),
@@ -26,7 +29,7 @@ class CacheKeyFactory
             $parts[] = $this->normalize((string) $segment, 'segment');
         }
 
-        return implode(self::SEPARATOR, $parts);
+        return implode($this->separator(), $parts);
     }
 
     private function normalize(string $value, string $name): string
@@ -39,7 +42,23 @@ class CacheKeyFactory
 
         return strtr($normalized, [
             '%' => '%25',
-            self::SEPARATOR => '%3A',
+            $this->separator() => $this->escapedSeparator(),
         ]);
+    }
+
+    private function escapedSeparator(): string
+    {
+        return sprintf('%%%02X', ord($this->separator()));
+    }
+
+    private function separator(): string
+    {
+        $separator = trim($this->separator);
+
+        if ($separator === '') {
+            throw new InvalidPackageDefinitionException('Cache key separator must not be empty.');
+        }
+
+        return $separator;
     }
 }

@@ -31,3 +31,11 @@ it('rejects duplicate feature names', function (): void {
 it('rejects empty feature names', function (): void {
     (new FeatureRegistry)->register(new FeatureDefinition('', 'yezzmedia/laravel-content', 'Content pages'));
 })->throws(InvalidPackageDefinitionException::class);
+
+it('rejects registration after the feature registry is sealed', function (): void {
+    $registry = new FeatureRegistry;
+
+    $registry->seal();
+
+    $registry->register(new FeatureDefinition('content.pages', 'yezzmedia/laravel-content', 'Content pages'));
+})->throws(InvalidPackageDefinitionException::class, 'Feature registry is sealed.');

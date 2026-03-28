@@ -15,8 +15,12 @@ class FeatureRegistry
      */
     private array $features = [];
 
+    private bool $sealed = false;
+
     public function register(FeatureDefinition $feature): void
     {
+        $this->ensureNotSealed();
+
         if ($feature->name === '') {
             throw new InvalidPackageDefinitionException('Feature name must not be empty.');
         }
@@ -49,5 +53,17 @@ class FeatureRegistry
     public function has(string $feature): bool
     {
         return isset($this->features[$feature]);
+    }
+
+    public function seal(): void
+    {
+        $this->sealed = true;
+    }
+
+    private function ensureNotSealed(): void
+    {
+        if ($this->sealed) {
+            throw new InvalidPackageDefinitionException('Feature registry is sealed.');
+        }
     }
 }

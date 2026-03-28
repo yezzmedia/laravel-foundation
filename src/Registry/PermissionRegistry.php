@@ -15,8 +15,12 @@ class PermissionRegistry
      */
     private array $permissions = [];
 
+    private bool $sealed = false;
+
     public function register(PermissionDefinition $permission): void
     {
+        $this->ensureNotSealed();
+
         if ($permission->name === '') {
             throw new InvalidPackageDefinitionException('Permission name must not be empty.');
         }
@@ -44,5 +48,17 @@ class PermissionRegistry
         return $this->all()
             ->filter(static fn (PermissionDefinition $permission): bool => $permission->package === $package)
             ->values();
+    }
+
+    public function seal(): void
+    {
+        $this->sealed = true;
+    }
+
+    private function ensureNotSealed(): void
+    {
+        if ($this->sealed) {
+            throw new InvalidPackageDefinitionException('Permission registry is sealed.');
+        }
     }
 }

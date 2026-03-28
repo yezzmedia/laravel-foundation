@@ -40,8 +40,22 @@ class FoundationServiceProvider extends PackageServiceProvider
         $this->app->singleton(PermissionRegistry::class, static fn (): PermissionRegistry => new PermissionRegistry);
         $this->app->singleton(OpsModuleRegistry::class, static fn (): OpsModuleRegistry => new OpsModuleRegistry);
         $this->app->singleton(PackageManifestLoader::class, static fn (): PackageManifestLoader => new PackageManifestLoader);
-        $this->app->singleton(CacheKeyFactory::class, static fn (): CacheKeyFactory => new CacheKeyFactory);
-        $this->app->singleton(RateLimitKeyFactory::class, static fn (): RateLimitKeyFactory => new RateLimitKeyFactory);
+        $this->app->singleton(CacheKeyFactory::class, function (): CacheKeyFactory {
+            $prefix = config('foundation.cache.prefix', 'website');
+            $separator = config('foundation.cache.separator', ':');
+
+            return new CacheKeyFactory(
+                prefix: is_string($prefix) ? $prefix : 'website',
+                separator: is_string($separator) ? $separator : ':',
+            );
+        });
+        $this->app->singleton(RateLimitKeyFactory::class, function (): RateLimitKeyFactory {
+            $separator = config('foundation.rate_limits.separator', ':');
+
+            return new RateLimitKeyFactory(
+                separator: is_string($separator) ? $separator : ':',
+            );
+        });
         $this->app->singleton(IntegrationManager::class, function (): IntegrationManager {
             return new IntegrationManager(
                 packages: $this->app->make(PackageRegistry::class),
@@ -88,6 +102,18 @@ class FoundationServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        $this->app->booted(function (): void {
+            if (! (bool) config('foundation.registry.seal_after_boot', true) || $this->app->runningUnitTests()) {
+                return;
+            }
+
+            $this->app->make(PackageRegistry::class)->seal();
+            $this->app->make(FeatureRegistry::class)->seal();
+            $this->app->make(PermissionRegistry::class)->seal();
+            $this->app->make(OpsModuleRegistry::class)->seal();
+            $this->app->make(PackageManifestLoader::class)->seal();
+        });
+
         if (! $this->app->runningInConsole()) {
             return;
         }

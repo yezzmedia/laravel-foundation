@@ -44,3 +44,16 @@ it('rejects empty package names', function (): void {
         packageClass: FakePlatformPackage::class,
     ));
 })->throws(InvalidPackageDefinitionException::class);
+
+it('rejects registration after the package registry is sealed', function (): void {
+    $registry = new PackageRegistry;
+
+    $registry->seal();
+
+    $registry->register(new PackageMetadata(
+        name: 'yezzmedia/laravel-content',
+        vendor: 'yezzmedia',
+        description: 'Content package.',
+        packageClass: FakePlatformPackage::class,
+    ));
+})->throws(InvalidPackageDefinitionException::class, 'Package registry is sealed.');

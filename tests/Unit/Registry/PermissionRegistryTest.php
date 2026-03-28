@@ -35,3 +35,11 @@ it('returns an empty collection for unknown packages', function (): void {
 
     expect($registry->forPackage('yezzmedia/laravel-missing'))->toHaveCount(0);
 });
+
+it('rejects registration after the permission registry is sealed', function (): void {
+    $registry = new PermissionRegistry;
+
+    $registry->seal();
+
+    $registry->register(new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages'));
+})->throws(InvalidPackageDefinitionException::class, 'Permission registry is sealed.');

@@ -31,9 +31,10 @@ it('registers the core foundation bindings', function (): void {
 });
 
 it('merges the package configuration', function (): void {
-    expect(config('foundation.vendor'))->toBe('yezzmedia')
-        ->and(config('foundation.cache.prefix'))->toBe('website')
-        ->and(config('foundation.install.command'))->toBe('website:install');
+    expect(config('foundation.cache.prefix'))->toBe('website')
+        ->and(config('foundation.cache.separator'))->toBe(':')
+        ->and(config('foundation.rate_limits.separator'))->toBe(':')
+        ->and(config('foundation.registry.seal_after_boot'))->toBeFalse();
 });
 
 it('uses configured separators and prefixes in resolved key factories', function (): void {

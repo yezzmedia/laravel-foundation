@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace YezzMedia\Foundation\Data;
 
+/**
+ * Describes one cache profile that a platform package wants to expose.
+ */
 final readonly class CacheProfile
 {
     /**

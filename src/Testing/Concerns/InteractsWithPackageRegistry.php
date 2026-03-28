@@ -11,6 +11,9 @@ use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 
+/**
+ * Gives tests small helpers for package registration and assertions.
+ */
 trait InteractsWithPackageRegistry
 {
     public function packageRegistry(): PackageRegistry

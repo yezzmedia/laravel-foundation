@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace YezzMedia\Foundation\Data;
 
 /**
+ * Captures the normalized outcome of one foundation install run.
+ *
  * @phpstan-type InstallStepReference array{package: string, step: string}
  */
 final readonly class InstallResult

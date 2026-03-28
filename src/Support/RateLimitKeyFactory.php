@@ -7,6 +7,9 @@ namespace YezzMedia\Foundation\Support;
 use YezzMedia\Foundation\Data\RateLimitDefinition;
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 
+/**
+ * Builds deterministic keys for rate limit definitions and request context.
+ */
 class RateLimitKeyFactory
 {
     public function __construct(private readonly string $separator = ':') {}
@@ -82,6 +85,7 @@ class RateLimitKeyFactory
 
     private function normalize(string $value, string $name): string
     {
+        // Escaping keeps dynamic values from changing the structural key shape.
         return strtr($this->value($value, $name), [
             '%' => '%25',
             $this->separator() => $this->escapedSeparator(),

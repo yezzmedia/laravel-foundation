@@ -24,6 +24,9 @@ use YezzMedia\Foundation\Support\PackageManifestLoader;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 use YezzMedia\Foundation\Support\RateLimitKeyFactory;
 
+/**
+ * Boots the shared foundation services that other platform packages build on.
+ */
 class FoundationServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
@@ -103,6 +106,8 @@ class FoundationServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->app->booted(function (): void {
+            // Explicit package registration happens during provider boot. After that,
+            // the normalized platform state should stay read-only for predictable diagnostics.
             if (! (bool) config('foundation.registry.seal_after_boot', true) || $this->app->runningUnitTests()) {
                 return;
             }

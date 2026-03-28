@@ -13,6 +13,9 @@ use YezzMedia\Foundation\Exceptions\InstallationFailedException;
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 use YezzMedia\Foundation\Support\PackageManifestLoader;
 
+/**
+ * Orchestrates explicit install steps declared by registered platform packages.
+ */
 class InstallManager
 {
     public function __construct(private readonly PackageManifestLoader $manifestLoader) {}
@@ -39,6 +42,8 @@ class InstallManager
             try {
                 $step->handle();
             } catch (Throwable $throwable) {
+                // Foundation stops at the first blocking failure so downstream setup
+                // does not run against a partially initialized package state.
                 $failedSteps[] = $this->stepReference($step);
                 $messages[] = InstallationFailedException::forStep($step->package(), $step->key(), $throwable)->getMessage();
 
@@ -131,6 +136,7 @@ class InstallManager
      */
     private function determineStatus(?array $only, array $skippedSteps): string
     {
+        // Filtered or skipped runs are intentionally partial even when nothing fails.
         if ($only !== null || $skippedSteps !== []) {
             return 'partial';
         }

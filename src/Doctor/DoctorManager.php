@@ -12,6 +12,9 @@ use YezzMedia\Foundation\Events\DoctorChecksCompleted;
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 use YezzMedia\Foundation\Support\PackageManifestLoader;
 
+/**
+ * Aggregates readiness checks declared by registered platform packages.
+ */
 class DoctorManager
 {
     /**
@@ -44,6 +47,7 @@ class DoctorManager
      */
     public function failing(): Collection
     {
+        // Only blocking failed results should influence command exit codes.
         return $this->results()
             ->filter(static fn (DoctorResult $result): bool => $result->status === 'failed' && $result->isBlocking)
             ->values();

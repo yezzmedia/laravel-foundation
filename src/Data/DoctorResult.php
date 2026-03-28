@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace YezzMedia\Foundation\Data;
 
+/**
+ * Represents one normalized doctor check result.
+ */
 final readonly class DoctorResult
 {
     /**

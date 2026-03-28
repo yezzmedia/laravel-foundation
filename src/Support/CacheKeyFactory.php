@@ -6,6 +6,9 @@ namespace YezzMedia\Foundation\Support;
 
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 
+/**
+ * Builds deterministic cache keys for foundation-aware packages.
+ */
 class CacheKeyFactory
 {
     public function __construct(
@@ -40,6 +43,7 @@ class CacheKeyFactory
             throw new InvalidPackageDefinitionException(sprintf('Cache key %s must not be empty.', $name));
         }
 
+        // Escape separator characters so dynamic segments cannot create ambiguous keys.
         return strtr($normalized, [
             '%' => '%25',
             $this->separator() => $this->escapedSeparator(),

@@ -7,6 +7,9 @@ namespace YezzMedia\Foundation\Support;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 
+/**
+ * Answers simple integration questions against the normalized platform state.
+ */
 class IntegrationManager
 {
     public function __construct(

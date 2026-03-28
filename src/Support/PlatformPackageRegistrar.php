@@ -28,6 +28,9 @@ use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
 
+/**
+ * Normalizes one package's declarations into the foundation registries.
+ */
 class PlatformPackageRegistrar
 {
     public function __construct(
@@ -52,6 +55,7 @@ class PlatformPackageRegistrar
             return;
         }
 
+        // Only enabled packages participate in runtime workflows and capability aggregation.
         $this->manifestLoader->register($package);
 
         if ($package instanceof RegistersFeatures) {

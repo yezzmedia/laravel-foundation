@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use Orchestra\Testbench\TestCase as Orchestra;
-use YezzMedia\Foundation\FoundationServiceProvider;
+use YezzMedia\Foundation\Testing\Concerns\InteractsWithDoctorManager;
+use YezzMedia\Foundation\Testing\Concerns\InteractsWithFeatureRegistry;
+use YezzMedia\Foundation\Testing\Concerns\InteractsWithInstallManager;
+use YezzMedia\Foundation\Testing\Concerns\InteractsWithPackageRegistry;
+use YezzMedia\Foundation\Testing\FoundationTestCase;
 
-abstract class TestCase extends Orchestra
+abstract class TestCase extends FoundationTestCase
 {
-    protected function getPackageProviders($app): array
-    {
-        return [
-            FoundationServiceProvider::class,
-        ];
-    }
+    use InteractsWithDoctorManager;
+    use InteractsWithFeatureRegistry;
+    use InteractsWithInstallManager;
+    use InteractsWithPackageRegistry;
 }

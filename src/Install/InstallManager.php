@@ -7,6 +7,7 @@ namespace YezzMedia\Foundation\Install;
 use Throwable;
 use YezzMedia\Foundation\Contracts\DefinesInstallSteps;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
+use YezzMedia\Foundation\Data\InstallContext;
 use YezzMedia\Foundation\Data\InstallResult;
 use YezzMedia\Foundation\Events\WebsiteInstalled;
 use YezzMedia\Foundation\Exceptions\InstallationFailedException;
@@ -23,8 +24,9 @@ class InstallManager
     /**
      * @param  array<int, string>|null  $only
      */
-    public function run(?array $only = null): InstallResult
+    public function run(?array $only = null, ?InstallContext $context = null): InstallResult
     {
+        $context ??= new InstallContext;
         $steps = $this->steps($only);
         $executedSteps = [];
         $failedSteps = [];
@@ -32,7 +34,7 @@ class InstallManager
         $skippedSteps = [];
 
         foreach ($steps as $step) {
-            if (! $step->shouldRun()) {
+            if (! $step->shouldRun($context)) {
                 $skippedSteps[] = $this->stepReference($step);
                 $messages[] = sprintf('Skipped install step [%s] for package [%s].', $step->key(), $step->package());
 
@@ -40,7 +42,7 @@ class InstallManager
             }
 
             try {
-                $step->handle();
+                $step->handle($context);
             } catch (Throwable $throwable) {
                 // Foundation stops at the first blocking failure so downstream setup
                 // does not run against a partially initialized package state.
@@ -52,7 +54,7 @@ class InstallManager
                     executedSteps: $executedSteps,
                     failedSteps: $failedSteps,
                     messages: $messages,
-                    context: $this->context($only, $skippedSteps),
+                    context: $this->resultContext($only, $skippedSteps, $context),
                 );
             }
 
@@ -65,7 +67,7 @@ class InstallManager
             executedSteps: $executedSteps,
             failedSteps: $failedSteps,
             messages: $messages === [] ? ['No install steps were available.'] : $messages,
-            context: $this->context($only, $skippedSteps),
+            context: $this->resultContext($only, $skippedSteps, $context),
         );
 
         if ($result->status === 'success') {
@@ -175,7 +177,7 @@ class InstallManager
      * @param  array<int, array{package: string, step: string}>  $skippedSteps
      * @return array<string, mixed>|null
      */
-    private function context(?array $only, array $skippedSteps): ?array
+    private function resultContext(?array $only, array $skippedSteps, InstallContext $installContext): ?array
     {
         $context = [];
 
@@ -185,6 +187,14 @@ class InstallManager
 
         if ($skippedSteps !== []) {
             $context['skipped_steps'] = $skippedSteps;
+        }
+
+        if ($installContext->allowMigrations) {
+            $context['allow_migrations'] = true;
+        }
+
+        if ($installContext->refreshPublishedResources) {
+            $context['refresh_published_resources'] = true;
         }
 
         return $context === [] ? null : $context;

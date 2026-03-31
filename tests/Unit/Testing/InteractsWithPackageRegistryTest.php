@@ -16,6 +16,7 @@ it('registers and exposes packages through the package registry helpers', functi
     $testHelper->assertRegisteredPackage($package->metadata()->name);
 
     expect($testHelper->registeredPackages()->pluck('name')->all())->toBe([
+        'yezzmedia/laravel-foundation',
         'yezzmedia/laravel-settings',
     ]);
 });

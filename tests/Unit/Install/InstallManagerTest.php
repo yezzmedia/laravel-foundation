@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Event;
 use Tests\Fixtures\FakeInstallPackage;
 use Tests\Fixtures\FakeInstallStep;
+use YezzMedia\Foundation\Data\InstallContext;
 use YezzMedia\Foundation\Events\WebsiteInstalled;
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 use YezzMedia\Foundation\Install\InstallManager;
@@ -189,6 +190,66 @@ it('returns only sorted steps for the requested package', function (): void {
         'early',
         'late',
     ]);
+});
+
+it('passes the explicit install context into executed steps', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('bootstrap', 'yezzmedia/laravel-install')],
+    ));
+
+    $result = app(InstallManager::class)->run(context: new InstallContext(
+        allowMigrations: true,
+        refreshPublishedResources: true,
+    ));
+
+    expect($result->status)->toBe('success')
+        ->and($result->context)->toBe([
+            'allow_migrations' => true,
+            'refresh_published_resources' => true,
+        ])
+        ->and(FakeInstallStep::handledContexts())->toBe([
+            [
+                'reference' => 'yezzmedia/laravel-install:bootstrap',
+                'allow_migrations' => true,
+                'refresh_published_resources' => true,
+            ],
+        ]);
+});
+
+it('skips migration-gated steps when migrations are not allowed', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('database', 'yezzmedia/laravel-install', requiresMigrations: true)],
+    ));
+
+    $result = app(InstallManager::class)->run();
+
+    expect($result->status)->toBe('partial')
+        ->and($result->executedSteps)->toBe([])
+        ->and($result->context)->toMatchArray([
+            'skipped_steps' => [
+                ['package' => 'yezzmedia/laravel-install', 'step' => 'database'],
+            ],
+        ])
+        ->and(FakeInstallStep::handled())->toBe([]);
+});
+
+it('runs migration-gated steps when migrations are explicitly allowed', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('database', 'yezzmedia/laravel-install', requiresMigrations: true)],
+    ));
+
+    $result = app(InstallManager::class)->run(context: new InstallContext(allowMigrations: true));
+
+    expect($result->status)->toBe('success')
+        ->and($result->executedSteps)->toBe([
+            ['package' => 'yezzmedia/laravel-install', 'step' => 'database'],
+        ])
+        ->and($result->context)->toBe([
+            'allow_migrations' => true,
+        ])
+        ->and(FakeInstallStep::handled())->toBe([
+            'yezzmedia/laravel-install:database',
+        ]);
 });
 
 it('ignores disabled packages when collecting install steps', function (): void {

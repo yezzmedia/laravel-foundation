@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YezzMedia\Foundation\Testing\Concerns;
 
 use PHPUnit\Framework\Assert;
+use YezzMedia\Foundation\Data\InstallContext;
 use YezzMedia\Foundation\Data\InstallResult;
 use YezzMedia\Foundation\Install\InstallManager;
 
@@ -18,9 +19,9 @@ trait InteractsWithInstallManager
     /**
      * @param  array<int, string>|null  $only
      */
-    public function runInstall(?array $only = null): InstallResult
+    public function runInstall(?array $only = null, ?InstallContext $context = null): InstallResult
     {
-        return $this->installManager()->run($only);
+        return $this->installManager()->run($only, $context);
     }
 
     public function assertInstallStatus(InstallResult $result, string $status): void

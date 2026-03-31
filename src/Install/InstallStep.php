@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YezzMedia\Foundation\Install;
 
+use YezzMedia\Foundation\Data\InstallContext;
+
 interface InstallStep
 {
     public function key(): string;
@@ -12,7 +14,7 @@ interface InstallStep
 
     public function priority(): int;
 
-    public function shouldRun(): bool;
+    public function shouldRun(InstallContext $context): bool;
 
-    public function handle(): void;
+    public function handle(InstallContext $context): void;
 }

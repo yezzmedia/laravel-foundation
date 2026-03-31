@@ -105,6 +105,8 @@ class FoundationServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        $this->app->make(PlatformPackageRegistrar::class)->register(new FoundationPlatformPackage);
+
         $this->app->booted(function (): void {
             // Explicit package registration happens during provider boot. After that,
             // the normalized platform state should stay read-only for predictable diagnostics.

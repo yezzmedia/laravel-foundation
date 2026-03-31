@@ -4,6 +4,25 @@ All notable changes to `yezzmedia/laravel-foundation` will be documented in this
 
 The format is based on Keep a Changelog and this package follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- explicit install execution context through `InstallContext`
+- `website:install --migrate` to allow install steps to run required migrations
+- `website:install --refresh-publish` to allow install steps to refresh published resources intentionally
+- self-registration for `yezzmedia/laravel-foundation` inside the package registry with priority `0`
+
+### Changed
+
+- install-step contracts now receive install context in both `shouldRun()` and `handle()`
+- install results now report migration and publish-refresh intent in normalized context output
+- installation failures now include the underlying step exception message
+
+### Documentation
+
+- documented the explicit install flags and the foundation self-registration behavior in the package README
+
 ## [0.1.0] - 2026-03-30
 
 ### Added

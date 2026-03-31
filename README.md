@@ -129,8 +129,13 @@ These registries are what install, doctor, package listing, and feature listing 
 
 - runs package install steps in deterministic order
 - supports filtering with explicit package names
+- carries one explicit `InstallContext` through the run so steps can react to operator intent
+- supports explicit migration permission through `--migrate`
+- supports explicit published-resource refresh through `--refresh-publish`
 - stops on the first blocking failure
 - reports executed, failed, and skipped steps through `InstallResult`
+
+Foundation also registers itself into the package registry with priority `0`, so package inventory and downstream diagnostics always include the platform core.
 
 `DoctorManager` aggregates declared doctor checks across registered platform packages.
 
@@ -148,12 +153,17 @@ Foundation exposes these platform commands:
 
 ```bash
 php artisan website:install
+php artisan website:install --only=yezzmedia/laravel-access
+php artisan website:install --migrate
+php artisan website:install --refresh-publish
 php artisan website:doctor
 php artisan website:packages
 php artisan website:features
 ```
 
 - `website:install` runs declared install steps
+- `website:install --migrate` explicitly allows install steps to run required migrations
+- `website:install --refresh-publish` explicitly allows install steps to refresh already published resources
 - `website:doctor` reports declared doctor checks
 - `website:packages` lists registered platform packages
 - `website:features` lists registered platform features

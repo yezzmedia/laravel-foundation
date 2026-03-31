@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace YezzMedia\Foundation\Console;
 
 use Illuminate\Console\Command;
+use YezzMedia\Foundation\Data\InstallContext;
 use YezzMedia\Foundation\Install\InstallManager;
 
 class WebsiteInstallCommand extends Command
 {
-    protected $signature = 'website:install {--only=* : Run install steps for specific packages}';
+    protected $signature = 'website:install {--only=* : Run install steps for specific packages} {--migrate : Allow install steps to run required migrations} {--refresh-publish : Allow install steps to refresh already published resources}';
 
     protected $description = 'Run declared platform install steps';
 
@@ -20,8 +21,20 @@ class WebsiteInstallCommand extends Command
             is_array($onlyOption) ? $onlyOption : [],
             static fn (mixed $value): bool => is_string($value) && trim($value) !== '',
         ));
+        $context = new InstallContext(
+            allowMigrations: (bool) $this->option('migrate'),
+            refreshPublishedResources: (bool) $this->option('refresh-publish'),
+        );
 
-        $result = $installManager->run($only === [] ? null : $only);
+        $result = $installManager->run($only === [] ? null : $only, $context);
+
+        if ($context->allowMigrations) {
+            $this->warn('Migration execution is enabled for this install run.');
+        }
+
+        if ($context->refreshPublishedResources) {
+            $this->warn('Published resource refresh is enabled for this install run.');
+        }
 
         $this->line(sprintf('Status: %s', $result->status));
 

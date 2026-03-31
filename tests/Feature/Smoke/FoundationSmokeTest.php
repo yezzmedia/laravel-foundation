@@ -40,6 +40,7 @@ it('keeps multi package state consistent across registries and integration helpe
     $integrationManager = app(IntegrationManager::class);
 
     expect(app(PackageRegistry::class)->all()->pluck('name')->all())->toBe([
+        'yezzmedia/laravel-foundation',
         'yezzmedia/laravel-content',
         'yezzmedia/laravel-ops',
     ])

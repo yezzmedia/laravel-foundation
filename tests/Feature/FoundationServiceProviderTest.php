@@ -6,6 +6,7 @@ use YezzMedia\Foundation\Contracts\ResolvesSiteContext;
 use YezzMedia\Foundation\Data\RateLimitDefinition;
 use YezzMedia\Foundation\Data\SiteContext;
 use YezzMedia\Foundation\Doctor\DoctorManager;
+use YezzMedia\Foundation\FoundationPlatformPackage;
 use YezzMedia\Foundation\Install\InstallManager;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
@@ -27,7 +28,9 @@ it('registers the core foundation bindings', function (): void {
         ->and(app(IntegrationManager::class))->toBeInstanceOf(IntegrationManager::class)
         ->and(app(ResolvesSiteContext::class)->resolve())->toBeInstanceOf(SiteContext::class)
         ->and(app(CacheKeyFactory::class))->toBeInstanceOf(CacheKeyFactory::class)
-        ->and(app(RateLimitKeyFactory::class))->toBeInstanceOf(RateLimitKeyFactory::class);
+        ->and(app(RateLimitKeyFactory::class))->toBeInstanceOf(RateLimitKeyFactory::class)
+        ->and(app(PackageRegistry::class)->find('yezzmedia/laravel-foundation')?->packageClass)->toBe(FoundationPlatformPackage::class)
+        ->and(app(PackageRegistry::class)->find('yezzmedia/laravel-foundation')?->priority)->toBe(0);
 });
 
 it('merges the package configuration', function (): void {

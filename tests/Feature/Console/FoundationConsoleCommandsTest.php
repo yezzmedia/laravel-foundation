@@ -37,12 +37,13 @@ it('lists registered packages', function (): void {
             'Priority',
         ], [
             ['yezzmedia/laravel-content', 'yezzmedia', 'yes', 10],
+            ['yezzmedia/laravel-foundation', 'yezzmedia', 'yes', 0],
             ['yezzmedia/laravel-settings', 'yezzmedia', 'yes', 10],
         ])
         ->assertSuccessful();
 });
 
-it('shows a helpful message when no packages are registered', function (): void {
+it('lists the foundation package even without consumer package registration', function (): void {
     $command = artisan('website:packages');
 
     if (is_int($command)) {
@@ -50,7 +51,14 @@ it('shows a helpful message when no packages are registered', function (): void 
     }
 
     $command
-        ->expectsOutputToContain('No packages registered.')
+        ->expectsTable([
+            'Package',
+            'Vendor',
+            'Enabled',
+            'Priority',
+        ], [
+            ['yezzmedia/laravel-foundation', 'yezzmedia', 'yes', 0],
+        ])
         ->assertSuccessful();
 });
 
@@ -100,6 +108,59 @@ it('runs install steps and reports a successful status', function (): void {
     $command
         ->expectsOutputToContain('Status: success')
         ->expectsOutputToContain('Executed install step [bootstrap] for package [yezzmedia/laravel-install].')
+        ->assertSuccessful();
+});
+
+it('reports when migration execution is explicitly enabled', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('database', 'yezzmedia/laravel-install', requiresMigrations: true)],
+    ));
+
+    $command = artisan('website:install', ['--migrate' => true]);
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Migration execution is enabled for this install run.')
+        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Executed install step [database] for package [yezzmedia/laravel-install].')
+        ->assertSuccessful();
+});
+
+it('reports when published resource refresh is explicitly enabled', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('bootstrap', 'yezzmedia/laravel-install')],
+    ));
+
+    $command = artisan('website:install', ['--refresh-publish' => true]);
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Published resource refresh is enabled for this install run.')
+        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Executed install step [bootstrap] for package [yezzmedia/laravel-install].')
+        ->assertSuccessful();
+});
+
+it('skips migration-gated install steps during ordinary install runs', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('database', 'yezzmedia/laravel-install', requiresMigrations: true)],
+    ));
+
+    $command = artisan('website:install');
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Status: partial')
+        ->expectsOutputToContain('Skipped install step [database] for package [yezzmedia/laravel-install].')
         ->assertSuccessful();
 });
 

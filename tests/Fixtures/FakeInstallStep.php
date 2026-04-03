@@ -7,8 +7,9 @@ namespace Tests\Fixtures;
 use RuntimeException;
 use YezzMedia\Foundation\Data\InstallContext;
 use YezzMedia\Foundation\Install\InstallStep;
+use YezzMedia\Foundation\Install\OptionalInstallStep;
 
-class FakeInstallStep implements InstallStep
+class FakeInstallStep implements InstallStep, OptionalInstallStep
 {
     /**
      * @var array<int, string>
@@ -16,7 +17,7 @@ class FakeInstallStep implements InstallStep
     private static array $handled = [];
 
     /**
-     * @var array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool}>
+     * @var array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool, configure_access_audit: bool}>
      */
     private static array $handledContexts = [];
 
@@ -27,6 +28,7 @@ class FakeInstallStep implements InstallStep
         private readonly bool $shouldRun = true,
         private readonly bool $shouldFail = false,
         private readonly bool $requiresMigrations = false,
+        private readonly bool $optional = false,
     ) {}
 
     public function key(): string
@@ -57,6 +59,11 @@ class FakeInstallStep implements InstallStep
         return true;
     }
 
+    public function isOptional(): bool
+    {
+        return $this->optional;
+    }
+
     public function handle(InstallContext $context): void
     {
         if ($this->shouldFail) {
@@ -68,6 +75,7 @@ class FakeInstallStep implements InstallStep
             'reference' => sprintf('%s:%s', $this->package, $this->key),
             'allow_migrations' => $context->allowMigrations,
             'refresh_published_resources' => $context->refreshPublishedResources,
+            'configure_access_audit' => $context->configureAccessAudit,
         ];
     }
 
@@ -86,7 +94,7 @@ class FakeInstallStep implements InstallStep
     }
 
     /**
-     * @return array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool}>
+     * @return array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool, configure_access_audit: bool}>
      */
     public static function handledContexts(): array
     {

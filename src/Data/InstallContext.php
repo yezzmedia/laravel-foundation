@@ -12,5 +12,6 @@ final readonly class InstallContext
     public function __construct(
         public bool $allowMigrations = false,
         public bool $refreshPublishedResources = false,
+        public bool $configureAccessAudit = false,
     ) {}
 }

@@ -147,6 +147,24 @@ it('reports when published resource refresh is explicitly enabled', function ():
         ->assertSuccessful();
 });
 
+it('reports when access audit persistence is explicitly enabled', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('bootstrap', 'yezzmedia/laravel-install')],
+    ));
+
+    $command = artisan('website:install', ['--configure-access-audit' => true]);
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Access audit persistence is enabled for this install run.')
+        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Executed install step [bootstrap] for package [yezzmedia/laravel-install].')
+        ->assertSuccessful();
+});
+
 it('skips migration-gated install steps during ordinary install runs', function (): void {
     app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
         steps: [new FakeInstallStep('database', 'yezzmedia/laravel-install', requiresMigrations: true)],

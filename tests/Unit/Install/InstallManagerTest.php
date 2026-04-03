@@ -200,18 +200,21 @@ it('passes the explicit install context into executed steps', function (): void 
     $result = app(InstallManager::class)->run(context: new InstallContext(
         allowMigrations: true,
         refreshPublishedResources: true,
+        configureAccessAudit: true,
     ));
 
     expect($result->status)->toBe('success')
         ->and($result->context)->toBe([
             'allow_migrations' => true,
             'refresh_published_resources' => true,
+            'configure_access_audit' => true,
         ])
         ->and(FakeInstallStep::handledContexts())->toBe([
             [
                 'reference' => 'yezzmedia/laravel-install:bootstrap',
                 'allow_migrations' => true,
                 'refresh_published_resources' => true,
+                'configure_access_audit' => true,
             ],
         ]);
 });
@@ -230,6 +233,19 @@ it('skips migration-gated steps when migrations are not allowed', function (): v
                 ['package' => 'yezzmedia/laravel-install', 'step' => 'database'],
             ],
         ])
+        ->and(FakeInstallStep::handled())->toBe([]);
+});
+
+it('ignores optional install steps when they are not requested', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('audit', 'yezzmedia/laravel-install', optional: true, shouldRun: false)],
+    ));
+
+    $result = app(InstallManager::class)->run();
+
+    expect($result->status)->toBe('success')
+        ->and($result->messages)->toBe(['No install steps were available.'])
+        ->and($result->context)->toBeNull()
         ->and(FakeInstallStep::handled())->toBe([]);
 });
 

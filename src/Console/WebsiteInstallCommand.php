@@ -10,7 +10,7 @@ use YezzMedia\Foundation\Install\InstallManager;
 
 class WebsiteInstallCommand extends Command
 {
-    protected $signature = 'website:install {--only=* : Run install steps for specific packages} {--migrate : Allow install steps to run required migrations} {--refresh-publish : Allow install steps to refresh already published resources}';
+    protected $signature = 'website:install {--only=* : Run install steps for specific packages} {--migrate : Allow install steps to run required migrations} {--refresh-publish : Allow install steps to refresh already published resources} {--configure-access-audit : Enable access audit persistence through activitylog}';
 
     protected $description = 'Run declared platform install steps';
 
@@ -24,6 +24,7 @@ class WebsiteInstallCommand extends Command
         $context = new InstallContext(
             allowMigrations: (bool) $this->option('migrate'),
             refreshPublishedResources: (bool) $this->option('refresh-publish'),
+            configureAccessAudit: (bool) $this->option('configure-access-audit'),
         );
 
         $result = $installManager->run($only === [] ? null : $only, $context);
@@ -34,6 +35,10 @@ class WebsiteInstallCommand extends Command
 
         if ($context->refreshPublishedResources) {
             $this->warn('Published resource refresh is enabled for this install run.');
+        }
+
+        if ($context->configureAccessAudit) {
+            $this->warn('Access audit persistence is enabled for this install run.');
         }
 
         $this->line(sprintf('Status: %s', $result->status));

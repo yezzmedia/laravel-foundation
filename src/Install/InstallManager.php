@@ -35,6 +35,10 @@ class InstallManager
 
         foreach ($steps as $step) {
             if (! $step->shouldRun($context)) {
+                if ($step instanceof OptionalInstallStep && $step->isOptional()) {
+                    continue;
+                }
+
                 $skippedSteps[] = $this->stepReference($step);
                 $messages[] = sprintf('Skipped install step [%s] for package [%s].', $step->key(), $step->package());
 
@@ -195,6 +199,10 @@ class InstallManager
 
         if ($installContext->refreshPublishedResources) {
             $context['refresh_published_resources'] = true;
+        }
+
+        if ($installContext->configureAccessAudit) {
+            $context['configure_access_audit'] = true;
         }
 
         return $context === [] ? null : $context;

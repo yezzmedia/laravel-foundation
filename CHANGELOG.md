@@ -22,6 +22,7 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 ### Documentation
 
 - documented the explicit install flags and the foundation self-registration behavior in the package README
+- documented the planned `website:install --configure-audit` and `--audit-package=*` installer evolution, including the deprecation path for `--configure-access-audit`
 
 ## [0.1.0] - 2026-03-30
 

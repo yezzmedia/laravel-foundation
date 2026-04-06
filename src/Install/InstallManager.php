@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YezzMedia\Foundation\Install;
 
 use Throwable;
+use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesInstallSteps;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Data\InstallContext;
@@ -27,7 +28,47 @@ class InstallManager
     public function run(?array $only = null, ?InstallContext $context = null): InstallResult
     {
         $context ??= new InstallContext;
-        $steps = $this->steps($only);
+
+        return $this->runSteps($this->steps($only), $only, $context);
+    }
+
+    /**
+     * @param  array<int, string>|null  $only
+     */
+    public function runAudit(?array $only = null, ?InstallContext $context = null): InstallResult
+    {
+        $context ??= new InstallContext(
+            configureAudit: true,
+            auditPackages: $only ?? [],
+        );
+
+        return $this->runSteps($this->steps($only, auditOnly: true), $only, $context);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function auditPackages(): array
+    {
+        $packages = [];
+
+        foreach ($this->manifestLoader->packages() as $platformPackage) {
+            if ($this->supportsAuditInstall($platformPackage)) {
+                $packages[] = $platformPackage->metadata()->name;
+            }
+        }
+
+        sort($packages);
+
+        return $packages;
+    }
+
+    /**
+     * @param  array<int, InstallStep>  $steps
+     * @param  array<int, string>|null  $only
+     */
+    private function runSteps(array $steps, ?array $only, InstallContext $context): InstallResult
+    {
         $executedSteps = [];
         $failedSteps = [];
         $messages = [];
@@ -98,7 +139,7 @@ class InstallManager
      * @param  array<int, string>|null  $only
      * @return array<int, InstallStep>
      */
-    private function steps(?array $only = null): array
+    private function steps(?array $only = null, bool $auditOnly = false): array
     {
         $steps = [];
 
@@ -111,8 +152,17 @@ class InstallManager
                 continue;
             }
 
+            if ($auditOnly && ! $this->supportsAuditInstall($platformPackage)) {
+                continue;
+            }
+
             foreach ($platformPackage->installSteps() as $step) {
                 $this->ensureValidStep($platformPackage, $step);
+
+                if ($auditOnly && ! $step instanceof AuditInstallStep) {
+                    continue;
+                }
+
                 $steps[] = $step;
             }
         }
@@ -165,6 +215,27 @@ class InstallManager
         }
     }
 
+    private function supportsAuditInstall(PlatformPackage $platformPackage): bool
+    {
+        if (! $platformPackage instanceof DefinesInstallSteps || ! $platformPackage instanceof DefinesAuditEvents) {
+            return false;
+        }
+
+        if ($platformPackage->auditEventDefinitions() === []) {
+            return false;
+        }
+
+        foreach ($platformPackage->installSteps() as $step) {
+            $this->ensureValidStep($platformPackage, $step);
+
+            if ($step instanceof AuditInstallStep) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @return array{package: string, step: string}
      */
@@ -201,8 +272,18 @@ class InstallManager
             $context['refresh_published_resources'] = true;
         }
 
+        if ($installContext->configuresAudit()) {
+            $context['configure_audit'] = true;
+        }
+
         if ($installContext->configureAccessAudit) {
             $context['configure_access_audit'] = true;
+        }
+
+        $selectedAuditPackages = $installContext->selectedAuditPackages();
+
+        if ($selectedAuditPackages !== []) {
+            $context['audit_packages'] = $selectedAuditPackages;
         }
 
         return $context === [] ? null : $context;

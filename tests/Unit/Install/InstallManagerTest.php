@@ -5,9 +5,11 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Event;
 use Tests\Fixtures\FakeInstallPackage;
 use Tests\Fixtures\FakeInstallStep;
+use YezzMedia\Foundation\Data\AuditEventDefinition;
 use YezzMedia\Foundation\Data\InstallContext;
 use YezzMedia\Foundation\Events\WebsiteInstalled;
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
+use YezzMedia\Foundation\Install\AuditInstallStep;
 use YezzMedia\Foundation\Install\InstallManager;
 use YezzMedia\Foundation\Install\InstallStep;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
@@ -15,6 +17,22 @@ use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 beforeEach(function (): void {
     FakeInstallStep::reset();
 });
+
+function fakeAuditEventDefinition(string $package): AuditEventDefinition
+{
+    return new AuditEventDefinition(
+        key: str_replace('/', '.', $package).'.audit.updated',
+        package: $package,
+        action: 'updated',
+        subjectType: 'audit_subject',
+        description: 'Fake audit event.',
+    );
+}
+
+function fakeAuditInstallStep(string $key, string $package, int $priority = 10): InstallStep
+{
+    return new class($key, $package, $priority) extends FakeInstallStep implements AuditInstallStep {};
+}
 
 it('sorts install steps by priority, package, and step key', function (): void {
     $registrar = app(PlatformPackageRegistrar::class);
@@ -207,7 +225,9 @@ it('passes the explicit install context into executed steps', function (): void 
         ->and($result->context)->toBe([
             'allow_migrations' => true,
             'refresh_published_resources' => true,
+            'configure_audit' => true,
             'configure_access_audit' => true,
+            'audit_packages' => ['yezzmedia/laravel-access'],
         ])
         ->and(FakeInstallStep::handledContexts())->toBe([
             [
@@ -215,6 +235,101 @@ it('passes the explicit install context into executed steps', function (): void 
                 'allow_migrations' => true,
                 'refresh_published_resources' => true,
                 'configure_access_audit' => true,
+                'configure_audit' => true,
+                'audit_packages' => ['yezzmedia/laravel-access'],
+            ],
+        ]);
+});
+
+it('lists audit-capable packages in sorted order', function (): void {
+    $registrar = app(PlatformPackageRegistrar::class);
+
+    $registrar->register(new FakeInstallPackage(
+        name: 'yezzmedia/laravel-zeta',
+        steps: [fakeAuditInstallStep('configure_audit', 'yezzmedia/laravel-zeta')],
+        auditEvents: [fakeAuditEventDefinition('yezzmedia/laravel-zeta')],
+    ));
+
+    $registrar->register(new FakeInstallPackage(
+        name: 'yezzmedia/laravel-alpha',
+        steps: [fakeAuditInstallStep('configure_audit', 'yezzmedia/laravel-alpha')],
+        auditEvents: [fakeAuditEventDefinition('yezzmedia/laravel-alpha')],
+    ));
+
+    $registrar->register(new FakeInstallPackage(
+        name: 'yezzmedia/laravel-no-audit-step',
+        steps: [new FakeInstallStep('bootstrap', 'yezzmedia/laravel-no-audit-step')],
+        auditEvents: [fakeAuditEventDefinition('yezzmedia/laravel-no-audit-step')],
+    ));
+
+    expect(app(InstallManager::class)->auditPackages())->toBe([
+        'yezzmedia/laravel-alpha',
+        'yezzmedia/laravel-zeta',
+    ]);
+});
+
+it('runs only audit install steps for selected audit packages', function (): void {
+    $registrar = app(PlatformPackageRegistrar::class);
+
+    $registrar->register(new FakeInstallPackage(
+        name: 'yezzmedia/laravel-install',
+        steps: [
+            new FakeInstallStep('bootstrap', 'yezzmedia/laravel-install', priority: 5),
+            fakeAuditInstallStep('configure_audit', 'yezzmedia/laravel-install', 10),
+        ],
+        auditEvents: [fakeAuditEventDefinition('yezzmedia/laravel-install')],
+    ));
+
+    $registrar->register(new FakeInstallPackage(
+        name: 'yezzmedia/laravel-other',
+        steps: [fakeAuditInstallStep('configure_audit', 'yezzmedia/laravel-other')],
+        auditEvents: [fakeAuditEventDefinition('yezzmedia/laravel-other')],
+    ));
+
+    $result = app(InstallManager::class)->runAudit(
+        ['yezzmedia/laravel-install'],
+        new InstallContext(configureAudit: true, auditPackages: ['yezzmedia/laravel-install']),
+    );
+
+    expect($result->status)->toBe('partial')
+        ->and($result->executedSteps)->toBe([
+            ['package' => 'yezzmedia/laravel-install', 'step' => 'configure_audit'],
+        ])
+        ->and($result->context)->toBe([
+            'requested_packages' => ['yezzmedia/laravel-install'],
+            'configure_audit' => true,
+            'audit_packages' => ['yezzmedia/laravel-install'],
+        ])
+        ->and(FakeInstallStep::handled())->toBe([
+            'yezzmedia/laravel-install:configure_audit',
+        ]);
+});
+
+it('passes the selected audit packages into audit runs', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        name: 'yezzmedia/laravel-install',
+        steps: [fakeAuditInstallStep('configure_audit', 'yezzmedia/laravel-install')],
+        auditEvents: [fakeAuditEventDefinition('yezzmedia/laravel-install')],
+    ));
+
+    $result = app(InstallManager::class)->runAudit(context: new InstallContext(
+        configureAudit: true,
+        auditPackages: ['yezzmedia/laravel-install'],
+    ));
+
+    expect($result->status)->toBe('success')
+        ->and($result->context)->toBe([
+            'configure_audit' => true,
+            'audit_packages' => ['yezzmedia/laravel-install'],
+        ])
+        ->and(FakeInstallStep::handledContexts())->toBe([
+            [
+                'reference' => 'yezzmedia/laravel-install:configure_audit',
+                'allow_migrations' => false,
+                'refresh_published_resources' => false,
+                'configure_access_audit' => false,
+                'configure_audit' => true,
+                'audit_packages' => ['yezzmedia/laravel-install'],
             ],
         ]);
 });

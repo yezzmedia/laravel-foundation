@@ -168,11 +168,11 @@ php artisan website:features
 - `website:packages` lists registered platform packages
 - `website:features` lists registered platform features
 
-### Planned audit installer evolution
+### Audit persistence install flow
 
-The next planned install iteration keeps audit persistence setup inside `website:install` instead of introducing a second top-level command.
+Foundation now supports explicit audit persistence setup inside `website:install` instead of using a separate top-level command.
 
-Planned command shape:
+Supported command shape:
 
 ```bash
 php artisan website:install --configure-audit
@@ -180,13 +180,14 @@ php artisan website:install --configure-audit --audit-package=all
 php artisan website:install --configure-audit --audit-package=yezzmedia/laravel-access
 ```
 
-Planned behavior:
+Behavior:
 
 - `--configure-audit` starts an explicit audit-persistence setup flow
 - `--audit-package=*` narrows the flow to selected installed packages
 - `all` enables audit setup for every installed audit-capable package
-- interactive package selection should run when `--configure-audit` is passed without `--audit-package`
-- the existing `--configure-access-audit` flag is planned to become a deprecated access-only alias
+- interactive package selection runs when `--configure-audit` is passed without `--audit-package`
+- `--configure-access-audit` remains available as a deprecated access-only alias
+- audit setup runs only package-owned audit install steps and does not execute ordinary install, migration, or seeding steps
 
 ### Key factories
 

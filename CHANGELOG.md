@@ -12,17 +12,21 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - `website:install --migrate` to allow install steps to run required migrations
 - `website:install --refresh-publish` to allow install steps to refresh published resources intentionally
 - self-registration for `yezzmedia/laravel-foundation` inside the package registry with priority `0`
+- `website:install --configure-audit` with package selection through `--audit-package=*`
+- `AuditInstallStep` for package-owned audit persistence setup steps
 
 ### Changed
 
 - install-step contracts now receive install context in both `shouldRun()` and `handle()`
 - install results now report migration and publish-refresh intent in normalized context output
 - installation failures now include the underlying step exception message
+- install orchestration now distinguishes audit-only package setup from ordinary install flows
+- `--configure-access-audit` is now a deprecated alias for `--configure-audit --audit-package=yezzmedia/laravel-access`
 
 ### Documentation
 
 - documented the explicit install flags and the foundation self-registration behavior in the package README
-- documented the planned `website:install --configure-audit` and `--audit-package=*` installer evolution, including the deprecation path for `--configure-access-audit`
+- documented the implemented `website:install --configure-audit` and `--audit-package=*` flow, including the deprecation path for `--configure-access-audit`
 
 ## [0.1.0] - 2026-03-30
 

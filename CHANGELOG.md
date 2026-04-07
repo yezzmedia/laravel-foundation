@@ -22,11 +22,13 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - installation failures now include the underlying step exception message
 - install orchestration now distinguishes audit-only package setup from ordinary install flows
 - `--configure-access-audit` is now a deprecated alias for `--configure-audit --audit-package=yezzmedia/laravel-access`
+- packages with custom install steps must update older no-context method signatures to the current `InstallContext`-aware contract
 
 ### Documentation
 
 - documented the explicit install flags and the foundation self-registration behavior in the package README
 - documented the implemented `website:install --configure-audit` and `--audit-package=*` flow, including the deprecation path for `--configure-access-audit`
+- added a migration note in the README for consumer packages that still implement the pre-`InstallContext` install-step signatures
 
 ## [0.1.0] - 2026-03-30
 

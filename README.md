@@ -135,6 +135,11 @@ These registries are what install, doctor, package listing, and feature listing 
 - stops on the first blocking failure
 - reports executed, failed, and skipped steps through `InstallResult`
 
+Migration note for consumer packages:
+
+- custom install steps must now accept `InstallContext` in both `shouldRun()` and `handle()`
+- packages that still implement the older no-context install-step signatures must update those method signatures before adopting the current foundation runtime
+
 Foundation also registers itself into the package registry with priority `0`, so package inventory and downstream diagnostics always include the platform core.
 
 `DoctorManager` aggregates declared doctor checks across registered platform packages.

@@ -14,6 +14,15 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - self-registration for `yezzmedia/laravel-foundation` inside the package registry with priority `0`
 - `website:install --configure-audit` with package selection through `--audit-package=*`
 - `AuditInstallStep` for package-owned audit persistence setup steps
+- security-governance declaration contracts:
+  - `DefinesSecurityRequests`
+  - `DefinesSecurityRequirements`
+- security-governance DTOs:
+  - `SecurityRequestDefinition`
+  - `SecurityRequirementDefinition`
+- central registries:
+  - `SecurityRequestRegistry`
+  - `SecurityRequirementRegistry`
 
 ### Changed
 
@@ -23,12 +32,15 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - install orchestration now distinguishes audit-only package setup from ordinary install flows
 - `--configure-access-audit` is now a deprecated alias for `--configure-audit --audit-package=yezzmedia/laravel-access`
 - packages with custom install steps must update older no-context method signatures to the current `InstallContext`-aware contract
+- `PlatformPackageRegistrar` now validates and registers package-declared security requests and security requirements
+- foundation runtime now binds and seals the security-governance registries alongside the existing normalized package registries
 
 ### Documentation
 
 - documented the explicit install flags and the foundation self-registration behavior in the package README
 - documented the implemented `website:install --configure-audit` and `--audit-package=*` flow, including the deprecation path for `--configure-access-audit`
 - added a migration note in the README for consumer packages that still implement the pre-`InstallContext` install-step signatures
+- documented the new security-governance declaration surface, DTOs, registries, and validation vocabulary in the package README
 
 ## [0.1.0] - 2026-03-30
 

@@ -63,6 +63,8 @@ It binds:
 - `FeatureRegistry`
 - `PermissionRegistry`
 - `OpsModuleRegistry`
+- `SecurityRequestRegistry`
+- `SecurityRequirementRegistry`
 - `PackageManifestLoader`
 - `PlatformPackageRegistrar`
 - `InstallManager`
@@ -90,6 +92,8 @@ Supported capability contracts include:
 - `DefinesInstallSteps`
 - `DefinesRateLimiters`
 - `DefinesCacheProfiles`
+- `DefinesSecurityRequests`
+- `DefinesSecurityRequirements`
 
 Example registration pattern:
 
@@ -120,8 +124,45 @@ Foundation provides central registries for the normalized platform surface:
 - features
 - permissions
 - ops modules
+- security requests
+- security requirements
 
 These registries are what install, doctor, package listing, and feature listing work against.
+
+### Security governance declarations
+
+Foundation now provides the shared declaration surface that downstream packages use to describe security intent without taking over runtime enforcement.
+
+The new declaration contracts are:
+
+- `DefinesSecurityRequests`
+- `DefinesSecurityRequirements`
+
+The new DTOs are:
+
+- `SecurityRequestDefinition`
+- `SecurityRequirementDefinition`
+
+The new registries are:
+
+- `SecurityRequestRegistry`
+- `SecurityRequirementRegistry`
+
+`PlatformPackageRegistrar` validates and registers both declaration types. The current normalized vocabulary supports:
+
+- domains: `auth`, `identity`, `session`, `transport`, `runtime`, `secrets`
+- levels: `required`, `recommended`, `optional`, `disallowed`
+- enforcement modes: `observe_only`, `package_owned`, `centrally_enforced`
+
+Security request definitions also support payload-shape validation, preview-field allowlists, and masked-field declarations so downstream governance tooling can stay explicit about what may be shown to operators.
+
+Foundation's role remains declarative:
+
+- feature packages declare security requests and requirements
+- foundation validates and registers those declarations centrally
+- downstream packages such as `yezzmedia/laravel-ops-security` evaluate and verify runtime reality
+
+Foundation does not compute effective security policy and does not enforce authentication or settings behavior itself.
 
 ### Install and doctor workflows
 

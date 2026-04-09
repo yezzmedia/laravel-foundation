@@ -12,6 +12,8 @@ use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequestRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequirementRegistry;
 use YezzMedia\Foundation\Support\CacheKeyFactory;
 use YezzMedia\Foundation\Support\IntegrationManager;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
@@ -22,6 +24,8 @@ it('registers the core foundation bindings', function (): void {
         ->and(app(FeatureRegistry::class))->toBeInstanceOf(FeatureRegistry::class)
         ->and(app(PermissionRegistry::class))->toBeInstanceOf(PermissionRegistry::class)
         ->and(app(OpsModuleRegistry::class))->toBeInstanceOf(OpsModuleRegistry::class)
+        ->and(app(SecurityRequestRegistry::class))->toBeInstanceOf(SecurityRequestRegistry::class)
+        ->and(app(SecurityRequirementRegistry::class))->toBeInstanceOf(SecurityRequirementRegistry::class)
         ->and(app(PlatformPackageRegistrar::class))->toBeInstanceOf(PlatformPackageRegistrar::class)
         ->and(app(InstallManager::class))->toBeInstanceOf(InstallManager::class)
         ->and(app(DoctorManager::class))->toBeInstanceOf(DoctorManager::class)

@@ -18,6 +18,8 @@ use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequestRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequirementRegistry;
 use YezzMedia\Foundation\Support\CacheKeyFactory;
 use YezzMedia\Foundation\Support\IntegrationManager;
 use YezzMedia\Foundation\Support\PackageManifestLoader;
@@ -42,6 +44,8 @@ class FoundationServiceProvider extends PackageServiceProvider
         $this->app->singleton(FeatureRegistry::class, static fn (): FeatureRegistry => new FeatureRegistry);
         $this->app->singleton(PermissionRegistry::class, static fn (): PermissionRegistry => new PermissionRegistry);
         $this->app->singleton(OpsModuleRegistry::class, static fn (): OpsModuleRegistry => new OpsModuleRegistry);
+        $this->app->singleton(SecurityRequestRegistry::class, static fn (): SecurityRequestRegistry => new SecurityRequestRegistry);
+        $this->app->singleton(SecurityRequirementRegistry::class, static fn (): SecurityRequirementRegistry => new SecurityRequirementRegistry);
         $this->app->singleton(PackageManifestLoader::class, static fn (): PackageManifestLoader => new PackageManifestLoader);
         $this->app->singleton(CacheKeyFactory::class, function (): CacheKeyFactory {
             $prefix = config('foundation.cache.prefix', 'website');
@@ -86,6 +90,8 @@ class FoundationServiceProvider extends PackageServiceProvider
                 features: $this->app->make(FeatureRegistry::class),
                 permissions: $this->app->make(PermissionRegistry::class),
                 opsModules: $this->app->make(OpsModuleRegistry::class),
+                securityRequests: $this->app->make(SecurityRequestRegistry::class),
+                securityRequirements: $this->app->make(SecurityRequirementRegistry::class),
                 manifestLoader: $this->app->make(PackageManifestLoader::class),
             );
         });
@@ -118,6 +124,8 @@ class FoundationServiceProvider extends PackageServiceProvider
             $this->app->make(FeatureRegistry::class)->seal();
             $this->app->make(PermissionRegistry::class)->seal();
             $this->app->make(OpsModuleRegistry::class)->seal();
+            $this->app->make(SecurityRequestRegistry::class)->seal();
+            $this->app->make(SecurityRequirementRegistry::class)->seal();
             $this->app->make(PackageManifestLoader::class)->seal();
         });
 

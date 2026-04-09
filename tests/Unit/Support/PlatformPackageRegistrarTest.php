@@ -13,6 +13,8 @@ use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
 use YezzMedia\Foundation\Data\RateLimitDefinition;
+use YezzMedia\Foundation\Data\SecurityRequestDefinition;
+use YezzMedia\Foundation\Data\SecurityRequirementDefinition;
 use YezzMedia\Foundation\Events\FeatureRegistered;
 use YezzMedia\Foundation\Events\OpsModuleDefined;
 use YezzMedia\Foundation\Events\PackageRegistered;
@@ -22,6 +24,8 @@ use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequestRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequirementRegistry;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 
 it('registers package metadata and features through the registrar', function (): void {
@@ -167,6 +171,96 @@ it('validates audit, rate limit, and cache declarations during package registrat
 
     expect(app(PackageRegistry::class)->has('yezzmedia/laravel-ops'))->toBeTrue();
 });
+
+it('registers security requests and requirements through the registrar', function (): void {
+    $registrar = app(PlatformPackageRegistrar::class);
+
+    $registrar->register(new FakeCapabilityPackage(
+        securityRequests: [
+            new SecurityRequestDefinition(
+                key: 'ops.request.auth.login-throttle',
+                package: 'yezzmedia/laravel-ops',
+                domain: 'auth',
+                control: 'login_throttle',
+                scope: 'ops-panel',
+                requestedLevel: 'required',
+                requestedEnforcementMode: 'observe_only',
+                description: 'Declare login throttle posture.',
+                payloadSchema: ['guard' => 'Guard name.'],
+                allowedPreviewFields: ['guard'],
+            ),
+        ],
+        securityRequirements: [
+            new SecurityRequirementDefinition(
+                key: 'ops.auth.login-throttle',
+                package: 'yezzmedia/laravel-ops',
+                domain: 'auth',
+                control: 'login_throttle',
+                level: 'required',
+                scope: 'ops-panel',
+                description: 'Require login throttling.',
+                enforcementMode: 'observe_only',
+                appliesTo: ['login'],
+            ),
+        ],
+    ));
+
+    expect(app(SecurityRequestRegistry::class)->all()->pluck('key')->all())->toBe(['ops.request.auth.login-throttle'])
+        ->and(app(SecurityRequirementRegistry::class)->all()->pluck('key')->all())->toBe(['ops.auth.login-throttle']);
+});
+
+it('rejects security requests with unsupported domains', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        securityRequests: [
+            new SecurityRequestDefinition(
+                key: 'ops.request.invalid.domain',
+                package: 'yezzmedia/laravel-ops',
+                domain: 'network',
+                control: 'login_throttle',
+                scope: 'ops-panel',
+                requestedLevel: 'required',
+                requestedEnforcementMode: 'observe_only',
+                description: 'Invalid domain.',
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
+
+it('rejects security requests with preview fields outside the payload schema', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        securityRequests: [
+            new SecurityRequestDefinition(
+                key: 'ops.request.invalid.preview',
+                package: 'yezzmedia/laravel-ops',
+                domain: 'auth',
+                control: 'login_throttle',
+                scope: 'ops-panel',
+                requestedLevel: 'required',
+                requestedEnforcementMode: 'observe_only',
+                description: 'Invalid preview field.',
+                payloadSchema: ['guard' => 'Guard name.'],
+                allowedPreviewFields: ['missing'],
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
+
+it('rejects security requirements with unsupported levels', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        securityRequirements: [
+            new SecurityRequirementDefinition(
+                key: 'ops.auth.invalid-level',
+                package: 'yezzmedia/laravel-ops',
+                domain: 'auth',
+                control: 'login_throttle',
+                level: 'mandatory',
+                scope: 'ops-panel',
+                description: 'Invalid level.',
+                enforcementMode: 'observe_only',
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
 
 it('rejects permissions that belong to another package', function (): void {
     app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(

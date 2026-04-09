@@ -8,14 +8,18 @@ use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesCacheProfiles;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\DefinesRateLimiters;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequests;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequirements;
 use YezzMedia\Foundation\Contracts\ProvidesOpsModules;
 use YezzMedia\Foundation\Data\AuditEventDefinition;
 use YezzMedia\Foundation\Data\CacheProfile;
 use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PermissionDefinition;
 use YezzMedia\Foundation\Data\RateLimitDefinition;
+use YezzMedia\Foundation\Data\SecurityRequestDefinition;
+use YezzMedia\Foundation\Data\SecurityRequirementDefinition;
 
-class FakeCapabilityPackage extends FakePlatformPackage implements DefinesAuditEvents, DefinesCacheProfiles, DefinesPermissions, DefinesRateLimiters, ProvidesOpsModules
+class FakeCapabilityPackage extends FakePlatformPackage implements DefinesAuditEvents, DefinesCacheProfiles, DefinesPermissions, DefinesRateLimiters, DefinesSecurityRequests, DefinesSecurityRequirements, ProvidesOpsModules
 {
     /**
      * @param  array<int, PermissionDefinition>  $permissions
@@ -23,6 +27,8 @@ class FakeCapabilityPackage extends FakePlatformPackage implements DefinesAuditE
      * @param  array<int, AuditEventDefinition>  $auditEvents
      * @param  array<int, RateLimitDefinition>  $rateLimiters
      * @param  array<int, CacheProfile>  $cacheProfiles
+     * @param  array<int, SecurityRequestDefinition>  $securityRequests
+     * @param  array<int, SecurityRequirementDefinition>  $securityRequirements
      */
     public function __construct(
         string $name = 'yezzmedia/laravel-ops',
@@ -31,6 +37,8 @@ class FakeCapabilityPackage extends FakePlatformPackage implements DefinesAuditE
         private readonly array $auditEvents = [],
         private readonly array $rateLimiters = [],
         private readonly array $cacheProfiles = [],
+        private readonly array $securityRequests = [],
+        private readonly array $securityRequirements = [],
         bool $enabled = true,
     ) {
         parent::__construct($name, $enabled);
@@ -59,5 +67,15 @@ class FakeCapabilityPackage extends FakePlatformPackage implements DefinesAuditE
     public function rateLimitDefinitions(): array
     {
         return $this->rateLimiters;
+    }
+
+    public function securityRequestDefinitions(): array
+    {
+        return $this->securityRequests;
+    }
+
+    public function securityRequirementDefinitions(): array
+    {
+        return $this->securityRequirements;
     }
 }

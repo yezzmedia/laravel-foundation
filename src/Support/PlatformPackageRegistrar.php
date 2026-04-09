@@ -8,6 +8,8 @@ use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesCacheProfiles;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\DefinesRateLimiters;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequests;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequirements;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesOpsModules;
 use YezzMedia\Foundation\Contracts\RegistersFeatures;
@@ -18,6 +20,8 @@ use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
 use YezzMedia\Foundation\Data\RateLimitDefinition;
+use YezzMedia\Foundation\Data\SecurityRequestDefinition;
+use YezzMedia\Foundation\Data\SecurityRequirementDefinition;
 use YezzMedia\Foundation\Events\FeatureRegistered;
 use YezzMedia\Foundation\Events\OpsModuleDefined;
 use YezzMedia\Foundation\Events\PackageRegistered;
@@ -27,6 +31,8 @@ use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequestRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequirementRegistry;
 
 /**
  * Normalizes one package's declarations into the foundation registries.
@@ -38,6 +44,8 @@ class PlatformPackageRegistrar
         private readonly FeatureRegistry $features,
         private readonly PermissionRegistry $permissions,
         private readonly OpsModuleRegistry $opsModules,
+        private readonly SecurityRequestRegistry $securityRequests,
+        private readonly SecurityRequirementRegistry $securityRequirements,
         private readonly PackageManifestLoader $manifestLoader,
     ) {}
 
@@ -91,6 +99,20 @@ class PlatformPackageRegistrar
             }
         }
 
+        if ($package instanceof DefinesSecurityRequests) {
+            foreach ($package->securityRequestDefinitions() as $securityRequestDefinition) {
+                $this->ensureValidSecurityRequestDefinition($metadata, $securityRequestDefinition);
+                $this->securityRequests->register($securityRequestDefinition);
+            }
+        }
+
+        if ($package instanceof DefinesSecurityRequirements) {
+            foreach ($package->securityRequirementDefinitions() as $securityRequirementDefinition) {
+                $this->ensureValidSecurityRequirementDefinition($metadata, $securityRequirementDefinition);
+                $this->securityRequirements->register($securityRequirementDefinition);
+            }
+        }
+
         if ($package instanceof DefinesRateLimiters) {
             foreach ($package->rateLimitDefinitions() as $rateLimitDefinition) {
                 $this->ensureValidRateLimitDefinition($metadata, $rateLimitDefinition);
@@ -122,6 +144,145 @@ class PlatformPackageRegistrar
             throw new InvalidPackageDefinitionException(sprintf(
                 'Audit event [%s] must define action, subject type, and description.',
                 $auditEventDefinition->key,
+            ));
+        }
+    }
+
+    private function ensureValidSecurityRequestDefinition(PackageMetadata $metadata, SecurityRequestDefinition $securityRequestDefinition): void
+    {
+        if ($securityRequestDefinition->key === '') {
+            throw new InvalidPackageDefinitionException('Security request key must not be empty.');
+        }
+
+        if ($securityRequestDefinition->package !== $metadata->name) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'Security request [%s] must belong to package [%s].',
+                $securityRequestDefinition->key,
+                $metadata->name,
+            ));
+        }
+
+        if (
+            $securityRequestDefinition->domain === ''
+            || $securityRequestDefinition->control === ''
+            || $securityRequestDefinition->scope === ''
+            || $securityRequestDefinition->requestedLevel === ''
+            || $securityRequestDefinition->requestedEnforcementMode === ''
+            || $securityRequestDefinition->description === ''
+        ) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'Security request [%s] must define domain, control, scope, requested level, requested enforcement mode, and description.',
+                $securityRequestDefinition->key,
+            ));
+        }
+
+        $this->ensureValidSecurityDomain($securityRequestDefinition->key, $securityRequestDefinition->domain);
+        $this->ensureValidSecurityLevel($securityRequestDefinition->key, $securityRequestDefinition->requestedLevel, 'requested level');
+        $this->ensureValidSecurityEnforcementMode($securityRequestDefinition->key, $securityRequestDefinition->requestedEnforcementMode, 'requested enforcement mode');
+
+        foreach ($securityRequestDefinition->payloadSchema as $field => $description) {
+            if (! is_string($field) || $field === '' || ! is_string($description) || $description === '') {
+                throw new InvalidPackageDefinitionException(sprintf(
+                    'Security request [%s] payload schema entries must define non-empty field names and descriptions.',
+                    $securityRequestDefinition->key,
+                ));
+            }
+        }
+
+        foreach ($securityRequestDefinition->allowedPreviewFields as $field) {
+            if ($field === '' || ! array_key_exists($field, $securityRequestDefinition->payloadSchema)) {
+                throw new InvalidPackageDefinitionException(sprintf(
+                    'Security request [%s] preview field [%s] must exist in the payload schema.',
+                    $securityRequestDefinition->key,
+                    $field,
+                ));
+            }
+        }
+
+        foreach ($securityRequestDefinition->maskedFields as $field) {
+            if ($field === '' || ! array_key_exists($field, $securityRequestDefinition->payloadSchema)) {
+                throw new InvalidPackageDefinitionException(sprintf(
+                    'Security request [%s] masked field [%s] must exist in the payload schema.',
+                    $securityRequestDefinition->key,
+                    $field,
+                ));
+            }
+        }
+    }
+
+    private function ensureValidSecurityRequirementDefinition(PackageMetadata $metadata, SecurityRequirementDefinition $securityRequirementDefinition): void
+    {
+        if ($securityRequirementDefinition->key === '') {
+            throw new InvalidPackageDefinitionException('Security requirement key must not be empty.');
+        }
+
+        if ($securityRequirementDefinition->package !== $metadata->name) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'Security requirement [%s] must belong to package [%s].',
+                $securityRequirementDefinition->key,
+                $metadata->name,
+            ));
+        }
+
+        if (
+            $securityRequirementDefinition->domain === ''
+            || $securityRequirementDefinition->control === ''
+            || $securityRequirementDefinition->scope === ''
+            || $securityRequirementDefinition->level === ''
+            || $securityRequirementDefinition->enforcementMode === ''
+            || $securityRequirementDefinition->description === ''
+        ) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'Security requirement [%s] must define domain, control, scope, level, enforcement mode, and description.',
+                $securityRequirementDefinition->key,
+            ));
+        }
+
+        $this->ensureValidSecurityDomain($securityRequirementDefinition->key, $securityRequirementDefinition->domain);
+        $this->ensureValidSecurityLevel($securityRequirementDefinition->key, $securityRequirementDefinition->level, 'level');
+        $this->ensureValidSecurityEnforcementMode($securityRequirementDefinition->key, $securityRequirementDefinition->enforcementMode, 'enforcement mode');
+
+        foreach ($securityRequirementDefinition->appliesTo as $appliesTo) {
+            if ($appliesTo === '') {
+                throw new InvalidPackageDefinitionException(sprintf(
+                    'Security requirement [%s] applies-to entries must not be empty.',
+                    $securityRequirementDefinition->key,
+                ));
+            }
+        }
+    }
+
+    private function ensureValidSecurityDomain(string $key, string $domain): void
+    {
+        if (! in_array($domain, ['auth', 'identity', 'session', 'transport', 'runtime', 'secrets'], true)) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'Security definition [%s] has unsupported domain [%s].',
+                $key,
+                $domain,
+            ));
+        }
+    }
+
+    private function ensureValidSecurityLevel(string $key, string $level, string $field): void
+    {
+        if (! in_array($level, ['required', 'recommended', 'optional', 'disallowed'], true)) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'Security definition [%s] has unsupported %s [%s].',
+                $key,
+                $field,
+                $level,
+            ));
+        }
+    }
+
+    private function ensureValidSecurityEnforcementMode(string $key, string $mode, string $field): void
+    {
+        if (! in_array($mode, ['observe_only', 'package_owned', 'centrally_enforced'], true)) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'Security definition [%s] has unsupported %s [%s].',
+                $key,
+                $field,
+                $mode,
             ));
         }
     }

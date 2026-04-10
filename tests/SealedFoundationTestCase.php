@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use YezzMedia\Foundation\Registry\FeatureRegistry;
+use YezzMedia\Foundation\Registry\HttpMiddlewareRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
@@ -26,6 +27,7 @@ abstract class SealedFoundationTestCase extends FoundationTestCase
 
         app(PackageRegistry::class)->seal();
         app(FeatureRegistry::class)->seal();
+        app(HttpMiddlewareRegistry::class)->seal();
         app(PermissionRegistry::class)->seal();
         app(OpsModuleRegistry::class)->seal();
         app(PackageManifestLoader::class)->seal();

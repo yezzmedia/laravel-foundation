@@ -20,8 +20,9 @@ class FakeInstallPackage extends FakePlatformPackage implements DefinesAuditEven
         private readonly array $steps = [],
         private readonly array $auditEvents = [],
         bool $enabled = true,
+        int $priority = 10,
     ) {
-        parent::__construct($name, $enabled);
+        parent::__construct($name, $enabled, $priority);
     }
 
     public function installSteps(): array

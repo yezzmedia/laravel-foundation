@@ -9,12 +9,15 @@ use YezzMedia\Foundation\Doctor\DoctorManager;
 use YezzMedia\Foundation\FoundationPlatformPackage;
 use YezzMedia\Foundation\Install\InstallManager;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
+use YezzMedia\Foundation\Registry\HttpMiddlewareRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
 use YezzMedia\Foundation\Registry\SecurityRequestRegistry;
 use YezzMedia\Foundation\Registry\SecurityRequirementRegistry;
 use YezzMedia\Foundation\Support\CacheKeyFactory;
+use YezzMedia\Foundation\Support\FoundationHttpMiddlewareBridge;
+use YezzMedia\Foundation\Support\HttpMiddlewareResolver;
 use YezzMedia\Foundation\Support\IntegrationManager;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 use YezzMedia\Foundation\Support\RateLimitKeyFactory;
@@ -22,6 +25,7 @@ use YezzMedia\Foundation\Support\RateLimitKeyFactory;
 it('registers the core foundation bindings', function (): void {
     expect(app(PackageRegistry::class))->toBeInstanceOf(PackageRegistry::class)
         ->and(app(FeatureRegistry::class))->toBeInstanceOf(FeatureRegistry::class)
+        ->and(app(HttpMiddlewareRegistry::class))->toBeInstanceOf(HttpMiddlewareRegistry::class)
         ->and(app(PermissionRegistry::class))->toBeInstanceOf(PermissionRegistry::class)
         ->and(app(OpsModuleRegistry::class))->toBeInstanceOf(OpsModuleRegistry::class)
         ->and(app(SecurityRequestRegistry::class))->toBeInstanceOf(SecurityRequestRegistry::class)
@@ -30,6 +34,8 @@ it('registers the core foundation bindings', function (): void {
         ->and(app(InstallManager::class))->toBeInstanceOf(InstallManager::class)
         ->and(app(DoctorManager::class))->toBeInstanceOf(DoctorManager::class)
         ->and(app(IntegrationManager::class))->toBeInstanceOf(IntegrationManager::class)
+        ->and(app(HttpMiddlewareResolver::class))->toBeInstanceOf(HttpMiddlewareResolver::class)
+        ->and(app(FoundationHttpMiddlewareBridge::class))->toBeInstanceOf(FoundationHttpMiddlewareBridge::class)
         ->and(app(ResolvesSiteContext::class)->resolve())->toBeInstanceOf(SiteContext::class)
         ->and(app(CacheKeyFactory::class))->toBeInstanceOf(CacheKeyFactory::class)
         ->and(app(RateLimitKeyFactory::class))->toBeInstanceOf(RateLimitKeyFactory::class)

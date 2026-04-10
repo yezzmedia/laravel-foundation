@@ -34,6 +34,28 @@ function fakeAuditInstallStep(string $key, string $package, int $priority = 10):
     return new class($key, $package, $priority) extends FakeInstallStep implements AuditInstallStep {};
 }
 
+function provisionFoundationInstallBootstrapApp(): void
+{
+    $bootstrapDirectory = base_path('bootstrap');
+
+    if (! is_dir($bootstrapDirectory)) {
+        mkdir($bootstrapDirectory, 0777, true);
+    }
+
+    file_put_contents(base_path('bootstrap/app.php'), <<<'PHP'
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware): void {
+        //
+    })
+    ->create();
+PHP);
+}
+
 it('sorts install steps by priority, package, and step key', function (): void {
     $registrar = app(PlatformPackageRegistrar::class);
 
@@ -211,6 +233,8 @@ it('returns only sorted steps for the requested package', function (): void {
 });
 
 it('passes the explicit install context into executed steps', function (): void {
+    provisionFoundationInstallBootstrapApp();
+
     app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
         steps: [new FakeInstallStep('bootstrap', 'yezzmedia/laravel-install')],
     ));
@@ -219,12 +243,14 @@ it('passes the explicit install context into executed steps', function (): void 
         allowMigrations: true,
         refreshPublishedResources: true,
         configureAccessAudit: true,
+        configureHttpMiddlewareBridge: true,
     ));
 
     expect($result->status)->toBe('success')
         ->and($result->context)->toBe([
             'allow_migrations' => true,
             'refresh_published_resources' => true,
+            'configure_http_middleware_bridge' => true,
             'configure_audit' => true,
             'configure_access_audit' => true,
             'audit_packages' => ['yezzmedia/laravel-access'],
@@ -236,8 +262,26 @@ it('passes the explicit install context into executed steps', function (): void 
                 'refresh_published_resources' => true,
                 'configure_access_audit' => true,
                 'configure_audit' => true,
+                'configure_http_middleware_bridge' => true,
                 'audit_packages' => ['yezzmedia/laravel-access'],
             ],
+        ]);
+});
+
+it('includes the http middleware bridge flag in install result context', function (): void {
+    provisionFoundationInstallBootstrapApp();
+
+    app(PlatformPackageRegistrar::class)->register(new FakeInstallPackage(
+        steps: [new FakeInstallStep('bootstrap', 'yezzmedia/laravel-install')],
+    ));
+
+    $result = app(InstallManager::class)->run(context: new InstallContext(
+        configureHttpMiddlewareBridge: true,
+    ));
+
+    expect($result->status)->toBe('success')
+        ->and($result->context)->toBe([
+            'configure_http_middleware_bridge' => true,
         ]);
 });
 
@@ -329,6 +373,7 @@ it('passes the selected audit packages into audit runs', function (): void {
                 'refresh_published_resources' => false,
                 'configure_access_audit' => false,
                 'configure_audit' => true,
+                'configure_http_middleware_bridge' => false,
                 'audit_packages' => ['yezzmedia/laravel-install'],
             ],
         ]);

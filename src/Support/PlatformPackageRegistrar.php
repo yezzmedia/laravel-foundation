@@ -6,6 +6,7 @@ namespace YezzMedia\Foundation\Support;
 
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesCacheProfiles;
+use YezzMedia\Foundation\Contracts\DefinesHttpMiddleware;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\DefinesRateLimiters;
 use YezzMedia\Foundation\Contracts\DefinesSecurityRequests;
@@ -16,6 +17,7 @@ use YezzMedia\Foundation\Contracts\RegistersFeatures;
 use YezzMedia\Foundation\Data\AuditEventDefinition;
 use YezzMedia\Foundation\Data\CacheProfile;
 use YezzMedia\Foundation\Data\FeatureDefinition;
+use YezzMedia\Foundation\Data\HttpMiddlewareDefinition;
 use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
@@ -28,6 +30,7 @@ use YezzMedia\Foundation\Events\PackageRegistered;
 use YezzMedia\Foundation\Events\PermissionDefined;
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
+use YezzMedia\Foundation\Registry\HttpMiddlewareRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
@@ -42,6 +45,7 @@ class PlatformPackageRegistrar
     public function __construct(
         private readonly PackageRegistry $packages,
         private readonly FeatureRegistry $features,
+        private readonly HttpMiddlewareRegistry $httpMiddleware,
         private readonly PermissionRegistry $permissions,
         private readonly OpsModuleRegistry $opsModules,
         private readonly SecurityRequestRegistry $securityRequests,
@@ -72,6 +76,18 @@ class PlatformPackageRegistrar
                 $this->features->register($featureDefinition);
 
                 event(new FeatureRegistered($featureDefinition->name, $featureDefinition->package));
+            }
+        }
+
+        if ($package instanceof DefinesHttpMiddleware) {
+            foreach ($package->httpMiddlewareDefinitions() as $httpMiddlewareDefinition) {
+                $this->ensureValidHttpMiddlewareDefinition($metadata, $httpMiddlewareDefinition);
+
+                if (! $httpMiddlewareDefinition->enabled) {
+                    continue;
+                }
+
+                $this->httpMiddleware->register($httpMiddlewareDefinition);
             }
         }
 
@@ -351,6 +367,50 @@ class PlatformPackageRegistrar
             throw new InvalidPackageDefinitionException(sprintf(
                 'Feature [%s] must define a label.',
                 $featureDefinition->name,
+            ));
+        }
+    }
+
+    private function ensureValidHttpMiddlewareDefinition(PackageMetadata $metadata, HttpMiddlewareDefinition $httpMiddlewareDefinition): void
+    {
+        if ($httpMiddlewareDefinition->key === '') {
+            throw new InvalidPackageDefinitionException('HTTP middleware definition key must not be empty.');
+        }
+
+        if ($httpMiddlewareDefinition->package !== $metadata->name) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'HTTP middleware definition [%s] must belong to package [%s].',
+                $httpMiddlewareDefinition->key,
+                $metadata->name,
+            ));
+        }
+
+        if ($httpMiddlewareDefinition->middleware === '' || $httpMiddlewareDefinition->description === '') {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'HTTP middleware definition [%s] must define middleware and description.',
+                $httpMiddlewareDefinition->key,
+            ));
+        }
+
+        if (! in_array($httpMiddlewareDefinition->kind, ['alias', 'web_prepend', 'web_append'], true)) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'HTTP middleware definition [%s] has unsupported kind [%s].',
+                $httpMiddlewareDefinition->key,
+                $httpMiddlewareDefinition->kind,
+            ));
+        }
+
+        if ($httpMiddlewareDefinition->kind === 'alias' && ($httpMiddlewareDefinition->alias === null || $httpMiddlewareDefinition->alias === '')) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'HTTP middleware definition [%s] must define a non-empty alias for alias registrations.',
+                $httpMiddlewareDefinition->key,
+            ));
+        }
+
+        if ($httpMiddlewareDefinition->kind !== 'alias' && $httpMiddlewareDefinition->alias !== null) {
+            throw new InvalidPackageDefinitionException(sprintf(
+                'HTTP middleware definition [%s] may only define an alias when kind is [alias].',
+                $httpMiddlewareDefinition->key,
             ));
         }
     }

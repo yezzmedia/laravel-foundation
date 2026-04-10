@@ -35,6 +35,50 @@ function fakeConsoleAuditInstallStep(string $key, string $package): FakeInstallS
     return new class($key, $package) extends FakeInstallStep implements AuditInstallStep {};
 }
 
+function provisionFoundationBootstrapApp(): void
+{
+    $bootstrapDirectory = base_path('bootstrap');
+
+    if (! is_dir($bootstrapDirectory)) {
+        mkdir($bootstrapDirectory, 0777, true);
+    }
+
+    file_put_contents(base_path('bootstrap/app.php'), <<<'PHP'
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware): void {
+        //
+    })
+    ->create();
+PHP);
+}
+
+function provisionFoundationBootstrapAppWithBridge(): void
+{
+    $bootstrapDirectory = base_path('bootstrap');
+
+    if (! is_dir($bootstrapDirectory)) {
+        mkdir($bootstrapDirectory, 0777, true);
+    }
+
+    file_put_contents(base_path('bootstrap/app.php'), <<<'PHP'
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware): void {
+        \YezzMedia\Foundation\Support\FoundationHttpMiddlewareBridge::apply($middleware);
+    })
+    ->create();
+PHP);
+}
+
 it('lists registered packages', function (): void {
     $registrar = app(PlatformPackageRegistrar::class);
 
@@ -162,6 +206,22 @@ it('reports when published resource refresh is explicitly enabled', function ():
         ->expectsOutputToContain('Published resource refresh is enabled for this install run.')
         ->expectsOutputToContain('Status: success')
         ->expectsOutputToContain('Executed install step [bootstrap] for package [yezzmedia/laravel-install].')
+        ->assertSuccessful();
+});
+
+it('reports when the http middleware bridge configuration is explicitly enabled', function (): void {
+    provisionFoundationBootstrapApp();
+
+    $command = artisan('website:install', ['--configure-http-middleware-bridge' => true]);
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('HTTP middleware bridge configuration is enabled for this install run.')
+        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Executed install step [configure_http_middleware_bridge] for package [yezzmedia/laravel-foundation].')
         ->assertSuccessful();
 });
 
@@ -316,6 +376,8 @@ it('fails the install command when a blocking install step fails', function (): 
 });
 
 it('runs doctor checks and succeeds without blocking failures', function (): void {
+    provisionFoundationBootstrapAppWithBridge();
+
     app(PlatformPackageRegistrar::class)->register(new FakeDoctorPackage(
         checks: [
             new FakeDoctorCheck('config', 'yezzmedia/laravel-health', status: 'passed'),
@@ -330,11 +392,13 @@ it('runs doctor checks and succeeds without blocking failures', function (): voi
     }
 
     $command
-        ->expectsOutputToContain('Summary: passed=1 warning=1 failed=0 skipped=0')
+        ->expectsOutputToContain('Summary: passed=2 warning=1 failed=0 skipped=0')
         ->assertSuccessful();
 });
 
 it('fails doctor when a blocking check fails', function (): void {
+    provisionFoundationBootstrapAppWithBridge();
+
     app(PlatformPackageRegistrar::class)->register(new FakeDoctorPackage(
         checks: [
             new FakeDoctorCheck('config', 'yezzmedia/laravel-health', status: 'failed', isBlocking: true, message: 'Configuration is invalid.'),
@@ -348,11 +412,13 @@ it('fails doctor when a blocking check fails', function (): void {
     }
 
     $command
-        ->expectsOutputToContain('Summary: passed=0 warning=0 failed=1 skipped=0')
+        ->expectsOutputToContain('Summary: passed=1 warning=0 failed=1 skipped=0')
         ->assertFailed();
 });
 
-it('shows a helpful message when no doctor checks are registered', function (): void {
+it('reports the foundation bridge warning when the host bootstrap is present without the bridge', function (): void {
+    provisionFoundationBootstrapApp();
+
     $command = artisan('website:doctor');
 
     if (is_int($command)) {
@@ -360,6 +426,7 @@ it('shows a helpful message when no doctor checks are registered', function (): 
     }
 
     $command
-        ->expectsOutputToContain('No doctor checks registered.')
+        ->expectsOutputToContain('foundation_http_middleware_bridge_configured')
+        ->expectsOutputToContain('Summary: passed=0 warning=1 failed=0 skipped=0')
         ->assertSuccessful();
 });

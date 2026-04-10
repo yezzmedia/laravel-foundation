@@ -12,6 +12,7 @@ class FakePlatformPackage implements PlatformPackage
     public function __construct(
         private readonly string $name = 'yezzmedia/laravel-settings',
         private readonly bool $enabled = true,
+        private readonly int $priority = 10,
     ) {}
 
     public function metadata(): PackageMetadata
@@ -22,7 +23,7 @@ class FakePlatformPackage implements PlatformPackage
             description: 'Fake package used in tests.',
             packageClass: static::class,
             enabled: $this->enabled,
-            priority: 10,
+            priority: $this->priority,
         );
     }
 }

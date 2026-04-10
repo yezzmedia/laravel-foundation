@@ -12,7 +12,7 @@ use function implode;
 
 class WebsiteInstallCommand extends Command
 {
-    protected $signature = 'website:install {--only=* : Run install steps for specific packages} {--migrate : Allow install steps to run required migrations} {--refresh-publish : Allow install steps to refresh already published resources} {--configure-audit : Configure audit persistence for selected packages} {--audit-package=* : Configure audit persistence for specific packages or [all]} {--configure-access-audit : Deprecated alias for configuring access audit persistence}';
+    protected $signature = 'website:install {--only=* : Run install steps for specific packages} {--migrate : Allow install steps to run required migrations} {--refresh-publish : Allow install steps to refresh already published resources} {--configure-audit : Configure audit persistence for selected packages} {--audit-package=* : Configure audit persistence for specific packages or [all]} {--configure-access-audit : Deprecated alias for configuring access audit persistence} {--configure-http-middleware-bridge : Configure the generic foundation HTTP middleware bridge in bootstrap/app.php}';
 
     protected $description = 'Run declared platform install steps';
 
@@ -42,6 +42,7 @@ class WebsiteInstallCommand extends Command
             refreshPublishedResources: (bool) $this->option('refresh-publish'),
             configureAccessAudit: $configureAccessAudit,
             configureAudit: $configureAudit || $configureAccessAudit,
+            configureHttpMiddlewareBridge: (bool) $this->option('configure-http-middleware-bridge'),
             auditPackages: $selectedAuditPackages,
         );
 
@@ -60,6 +61,10 @@ class WebsiteInstallCommand extends Command
 
         if ($context->refreshPublishedResources) {
             $this->warn('Published resource refresh is enabled for this install run.');
+        }
+
+        if ($context->configureHttpMiddlewareBridge) {
+            $this->warn('HTTP middleware bridge configuration is enabled for this install run.');
         }
 
         if ($context->configuresAudit()) {

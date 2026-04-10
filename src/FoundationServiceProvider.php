@@ -15,12 +15,15 @@ use YezzMedia\Foundation\Data\SiteContext;
 use YezzMedia\Foundation\Doctor\DoctorManager;
 use YezzMedia\Foundation\Install\InstallManager;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
+use YezzMedia\Foundation\Registry\HttpMiddlewareRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
 use YezzMedia\Foundation\Registry\SecurityRequestRegistry;
 use YezzMedia\Foundation\Registry\SecurityRequirementRegistry;
 use YezzMedia\Foundation\Support\CacheKeyFactory;
+use YezzMedia\Foundation\Support\FoundationHttpMiddlewareBridge;
+use YezzMedia\Foundation\Support\HttpMiddlewareResolver;
 use YezzMedia\Foundation\Support\IntegrationManager;
 use YezzMedia\Foundation\Support\PackageManifestLoader;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
@@ -42,6 +45,7 @@ class FoundationServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(PackageRegistry::class, static fn (): PackageRegistry => new PackageRegistry);
         $this->app->singleton(FeatureRegistry::class, static fn (): FeatureRegistry => new FeatureRegistry);
+        $this->app->singleton(HttpMiddlewareRegistry::class, static fn (): HttpMiddlewareRegistry => new HttpMiddlewareRegistry);
         $this->app->singleton(PermissionRegistry::class, static fn (): PermissionRegistry => new PermissionRegistry);
         $this->app->singleton(OpsModuleRegistry::class, static fn (): OpsModuleRegistry => new OpsModuleRegistry);
         $this->app->singleton(SecurityRequestRegistry::class, static fn (): SecurityRequestRegistry => new SecurityRequestRegistry);
@@ -69,6 +73,17 @@ class FoundationServiceProvider extends PackageServiceProvider
                 features: $this->app->make(FeatureRegistry::class),
             );
         });
+        $this->app->singleton(HttpMiddlewareResolver::class, function (): HttpMiddlewareResolver {
+            return new HttpMiddlewareResolver(
+                definitions: $this->app->make(HttpMiddlewareRegistry::class),
+                packages: $this->app->make(PackageRegistry::class),
+            );
+        });
+        $this->app->singleton(FoundationHttpMiddlewareBridge::class, function (): FoundationHttpMiddlewareBridge {
+            return new FoundationHttpMiddlewareBridge(
+                resolver: $this->app->make(HttpMiddlewareResolver::class),
+            );
+        });
         $this->app->singleton(ResolvesSiteContext::class, function (): ResolvesSiteContext {
             return new class implements ResolvesSiteContext
             {
@@ -88,6 +103,7 @@ class FoundationServiceProvider extends PackageServiceProvider
             return new PlatformPackageRegistrar(
                 packages: $this->app->make(PackageRegistry::class),
                 features: $this->app->make(FeatureRegistry::class),
+                httpMiddleware: $this->app->make(HttpMiddlewareRegistry::class),
                 permissions: $this->app->make(PermissionRegistry::class),
                 opsModules: $this->app->make(OpsModuleRegistry::class),
                 securityRequests: $this->app->make(SecurityRequestRegistry::class),
@@ -122,6 +138,7 @@ class FoundationServiceProvider extends PackageServiceProvider
 
             $this->app->make(PackageRegistry::class)->seal();
             $this->app->make(FeatureRegistry::class)->seal();
+            $this->app->make(HttpMiddlewareRegistry::class)->seal();
             $this->app->make(PermissionRegistry::class)->seal();
             $this->app->make(OpsModuleRegistry::class)->seal();
             $this->app->make(SecurityRequestRegistry::class)->seal();

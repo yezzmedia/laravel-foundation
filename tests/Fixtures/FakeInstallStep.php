@@ -17,7 +17,7 @@ class FakeInstallStep implements InstallStep, OptionalInstallStep
     private static array $handled = [];
 
     /**
-     * @var array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool, configure_access_audit: bool, configure_audit: bool, audit_packages: array<int, string>}>
+     * @var array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool, configure_access_audit: bool, configure_audit: bool, configure_http_middleware_bridge: bool, audit_packages: array<int, string>}>
      */
     private static array $handledContexts = [];
 
@@ -77,6 +77,7 @@ class FakeInstallStep implements InstallStep, OptionalInstallStep
             'refresh_published_resources' => $context->refreshPublishedResources,
             'configure_access_audit' => $context->configureAccessAudit,
             'configure_audit' => $context->configuresAudit(),
+            'configure_http_middleware_bridge' => $context->configureHttpMiddlewareBridge,
             'audit_packages' => $context->selectedAuditPackages(),
         ];
     }
@@ -96,7 +97,7 @@ class FakeInstallStep implements InstallStep, OptionalInstallStep
     }
 
     /**
-     * @return array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool, configure_access_audit: bool, configure_audit: bool, audit_packages: array<int, string>}>
+     * @return array<int, array{reference: string, allow_migrations: bool, refresh_published_resources: bool, configure_access_audit: bool, configure_audit: bool, configure_http_middleware_bridge: bool, audit_packages: array<int, string>}>
      */
     public static function handledContexts(): array
     {

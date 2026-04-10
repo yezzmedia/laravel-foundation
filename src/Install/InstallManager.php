@@ -272,6 +272,10 @@ class InstallManager
             $context['refresh_published_resources'] = true;
         }
 
+        if ($installContext->configureHttpMiddlewareBridge) {
+            $context['configure_http_middleware_bridge'] = true;
+        }
+
         if ($installContext->configuresAudit()) {
             $context['configure_audit'] = true;
         }

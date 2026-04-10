@@ -42,6 +42,7 @@ it('runs doctor checks in deterministic order and dispatches a completion summar
     expect($results->pluck('key')->all())->toBe([
         'first',
         'middle',
+        'foundation_http_middleware_bridge_configured',
         'a-first',
         'z-last',
     ])
@@ -55,7 +56,7 @@ it('runs doctor checks in deterministic order and dispatches a completion summar
     Event::assertDispatched(DoctorChecksCompleted::class, function (DoctorChecksCompleted $event): bool {
         return $event->summary === [
             'passed' => 1,
-            'warning' => 1,
+            'warning' => 2,
             'failed' => 1,
             'skipped' => 1,
         ];
@@ -74,12 +75,12 @@ it('summarizes warning and skipped results without failures', function (): void 
 
     $results = app(DoctorManager::class)->run();
 
-    expect($results->pluck('status')->all())->toBe(['skipped', 'warning']);
+    expect($results->pluck('status')->all())->toBe(['warning', 'skipped', 'warning']);
 
     Event::assertDispatched(DoctorChecksCompleted::class, function (DoctorChecksCompleted $event): bool {
         return $event->summary === [
             'passed' => 0,
-            'warning' => 1,
+            'warning' => 2,
             'failed' => 0,
             'skipped' => 1,
         ];
@@ -91,12 +92,15 @@ it('dispatches an empty completion summary when no doctor checks are registered'
 
     $results = app(DoctorManager::class)->run();
 
-    expect($results)->toHaveCount(0);
+    expect($results)->toHaveCount(1)
+        ->and($results->pluck('key')->all())->toBe([
+            'foundation_http_middleware_bridge_configured',
+        ]);
 
     Event::assertDispatched(DoctorChecksCompleted::class, function (DoctorChecksCompleted $event): bool {
         return $event->summary === [
             'passed' => 0,
-            'warning' => 0,
+            'warning' => 1,
             'failed' => 0,
             'skipped' => 0,
         ];
@@ -139,7 +143,10 @@ it('ignores registered packages that do not provide doctor checks', function ():
 
     $results = app(DoctorManager::class)->run();
 
-    expect($results)->toHaveCount(0);
+    expect($results)->toHaveCount(1)
+        ->and($results->pluck('key')->all())->toBe([
+            'foundation_http_middleware_bridge_configured',
+        ]);
 });
 
 it('ignores disabled packages when collecting doctor checks', function (): void {
@@ -150,7 +157,10 @@ it('ignores disabled packages when collecting doctor checks', function (): void 
 
     $results = app(DoctorManager::class)->run();
 
-    expect($results)->toHaveCount(0)
+    expect($results)->toHaveCount(1)
+        ->and($results->pluck('key')->all())->toBe([
+            'foundation_http_middleware_bridge_configured',
+        ])
         ->and(FakeDoctorCheck::executed())->toBe([]);
 });
 

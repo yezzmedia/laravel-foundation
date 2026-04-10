@@ -9,6 +9,7 @@ use Tests\Fixtures\FakePlatformPackage;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Data\AuditEventDefinition;
 use YezzMedia\Foundation\Data\CacheProfile;
+use YezzMedia\Foundation\Data\HttpMiddlewareDefinition;
 use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
@@ -21,6 +22,7 @@ use YezzMedia\Foundation\Events\PackageRegistered;
 use YezzMedia\Foundation\Events\PermissionDefined;
 use YezzMedia\Foundation\Exceptions\InvalidPackageDefinitionException;
 use YezzMedia\Foundation\Registry\FeatureRegistry;
+use YezzMedia\Foundation\Registry\HttpMiddlewareRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
@@ -129,6 +131,35 @@ it('registers permissions and ops modules through the registrar', function (): v
 
     Event::assertDispatched(PermissionDefined::class, static fn (PermissionDefined $event): bool => $event->permissionName === 'ops.audit.view' && $event->packageName === 'yezzmedia/laravel-ops');
     Event::assertDispatched(OpsModuleDefined::class, static fn (OpsModuleDefined $event): bool => $event->moduleKey === 'ops.audit' && $event->packageName === 'yezzmedia/laravel-ops');
+});
+
+it('registers http middleware definitions through the registrar', function (): void {
+    $registrar = app(PlatformPackageRegistrar::class);
+
+    $registrar->register(new FakeCapabilityPackage(
+        httpMiddleware: [
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.alias',
+                package: 'yezzmedia/laravel-ops',
+                middleware: 'App\\Http\\Middleware\\TrackAnalytics',
+                kind: 'alias',
+                alias: 'ops.analytics',
+                description: 'Registers the analytics middleware alias.',
+            ),
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.web-prepend',
+                package: 'yezzmedia/laravel-ops',
+                middleware: 'App\\Http\\Middleware\\ResolveConsent',
+                kind: 'web_prepend',
+                description: 'Prepends consent resolution to the web group.',
+            ),
+        ],
+    ));
+
+    expect(app(HttpMiddlewareRegistry::class)->all()->pluck('key')->all())->toBe([
+        'ops.analytics.alias',
+        'ops.analytics.web-prepend',
+    ]);
 });
 
 it('validates audit, rate limit, and cache declarations during package registration', function (): void {
@@ -289,6 +320,97 @@ it('does not register capability declarations for disabled packages', function (
     Event::assertNotDispatched(PermissionDefined::class);
     Event::assertNotDispatched(OpsModuleDefined::class);
 });
+
+it('does not register http middleware definitions for disabled packages', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        httpMiddleware: [
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.alias',
+                package: 'yezzmedia/laravel-ops',
+                middleware: 'App\\Http\\Middleware\\TrackAnalytics',
+                kind: 'alias',
+                alias: 'ops.analytics',
+                description: 'Registers the analytics middleware alias.',
+            ),
+        ],
+        enabled: false,
+    ));
+
+    expect(app(HttpMiddlewareRegistry::class)->all())->toHaveCount(0);
+});
+
+it('rejects http middleware definitions that belong to another package', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        httpMiddleware: [
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.alias',
+                package: 'yezzmedia/laravel-other',
+                middleware: 'App\\Http\\Middleware\\TrackAnalytics',
+                kind: 'alias',
+                alias: 'ops.analytics',
+                description: 'Registers the analytics middleware alias.',
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
+
+it('rejects http middleware definitions without descriptions', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        httpMiddleware: [
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.alias',
+                package: 'yezzmedia/laravel-ops',
+                middleware: 'App\\Http\\Middleware\\TrackAnalytics',
+                kind: 'alias',
+                alias: 'ops.analytics',
+                description: '',
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
+
+it('rejects http middleware definitions with unsupported kinds', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        httpMiddleware: [
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.group',
+                package: 'yezzmedia/laravel-ops',
+                middleware: 'App\\Http\\Middleware\\TrackAnalytics',
+                kind: 'api_append',
+                description: 'Attempts to append to the api group.',
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
+
+it('requires aliases for alias http middleware definitions', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        httpMiddleware: [
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.alias',
+                package: 'yezzmedia/laravel-ops',
+                middleware: 'App\\Http\\Middleware\\TrackAnalytics',
+                kind: 'alias',
+                description: 'Registers the analytics middleware alias.',
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
+
+it('rejects aliases on non-alias http middleware definitions', function (): void {
+    app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(
+        httpMiddleware: [
+            new HttpMiddlewareDefinition(
+                key: 'ops.analytics.web-prepend',
+                package: 'yezzmedia/laravel-ops',
+                middleware: 'App\\Http\\Middleware\\ResolveConsent',
+                kind: 'web_prepend',
+                alias: 'ops.analytics',
+                description: 'Prepends consent resolution to the web group.',
+            ),
+        ],
+    ));
+})->throws(InvalidPackageDefinitionException::class);
 
 it('rejects permissions without labels', function (): void {
     app(PlatformPackageRegistrar::class)->register(new FakeCapabilityPackage(

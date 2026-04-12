@@ -129,6 +129,42 @@ Foundation provides central registries for the normalized platform surface:
 
 These registries are what install, doctor, package listing, and feature listing work against.
 
+### HTTP middleware declarations and bridge
+
+Foundation also provides a shared declaration surface for package-owned HTTP middleware wiring.
+
+The relevant capability and runtime pieces are:
+
+- `DefinesHttpMiddleware`
+- `HttpMiddlewareDefinition`
+- `HttpMiddlewareRegistry`
+- `HttpMiddlewareResolver`
+- `FoundationHttpMiddlewareBridge`
+
+This lets downstream packages declare stable middleware definitions instead of patching the host bootstrap directly from package code.
+
+Supported declaration kinds include:
+
+- `alias`
+- `web_prepend`
+- `web_append`
+
+Foundation resolves those declarations deterministically and applies them through the bridge at host boot time.
+
+The foundation package itself currently ships:
+
+- `ConfigureHttpMiddlewareBridgeInstallStep` to patch the standard Laravel 13 middleware bootstrap block when the host explicitly requests installation work
+- `FoundationHttpMiddlewareBridgeConfiguredCheck` to verify that the host bootstrap actually applies the bridge during diagnostics
+
+Typical host flow:
+
+```bash
+php artisan website:install --only=yezzmedia/laravel-foundation
+php artisan website:doctor
+```
+
+This keeps package-owned middleware aliases and web-stack injections explicit, auditable, and consistent across consumer packages.
+
 ### Security governance declarations
 
 Foundation now provides the shared declaration surface that downstream packages use to describe security intent without taking over runtime enforcement.
@@ -173,6 +209,7 @@ Foundation does not compute effective security policy and does not enforce authe
 - carries one explicit `InstallContext` through the run so steps can react to operator intent
 - supports explicit migration permission through `--migrate`
 - supports explicit published-resource refresh through `--refresh-publish`
+- supports explicit host bootstrap patching for the foundation HTTP middleware bridge
 - stops on the first blocking failure
 - reports executed, failed, and skipped steps through `InstallResult`
 
@@ -213,6 +250,11 @@ php artisan website:features
 - `website:doctor` reports declared doctor checks
 - `website:packages` lists registered platform packages
 - `website:features` lists registered platform features
+
+Foundation currently declares one install step and one doctor check of its own:
+
+- install step: `ConfigureHttpMiddlewareBridgeInstallStep`
+- doctor check: `FoundationHttpMiddlewareBridgeConfiguredCheck`
 
 ### Audit persistence install flow
 

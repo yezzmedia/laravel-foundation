@@ -11,6 +11,14 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - explicit install execution context through `InstallContext`
 - `website:install --migrate` to allow install steps to run required migrations
 - `website:install --refresh-publish` to allow install steps to refresh published resources intentionally
+- foundation HTTP middleware declaration and bridge surface through:
+  - `DefinesHttpMiddleware`
+  - `HttpMiddlewareDefinition`
+  - `HttpMiddlewareRegistry`
+  - `HttpMiddlewareResolver`
+  - `FoundationHttpMiddlewareBridge`
+- `ConfigureHttpMiddlewareBridgeInstallStep` for explicitly wiring the host bootstrap to the foundation middleware bridge
+- `FoundationHttpMiddlewareBridgeConfiguredCheck` for verifying the host bootstrap bridge wiring during diagnostics
 - self-registration for `yezzmedia/laravel-foundation` inside the package registry with priority `0`
 - `website:install --configure-audit` with package selection through `--audit-package=*`
 - `AuditInstallStep` for package-owned audit persistence setup steps
@@ -28,6 +36,7 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 
 - install-step contracts now receive install context in both `shouldRun()` and `handle()`
 - install results now report migration and publish-refresh intent in normalized context output
+- install orchestration now supports explicit host bootstrap patching for the foundation HTTP middleware bridge
 - installation failures now include the underlying step exception message
 - install orchestration now distinguishes audit-only package setup from ordinary install flows
 - `--configure-access-audit` is now a deprecated alias for `--configure-audit --audit-package=yezzmedia/laravel-access`
@@ -41,6 +50,7 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - documented the implemented `website:install --configure-audit` and `--audit-package=*` flow, including the deprecation path for `--configure-access-audit`
 - added a migration note in the README for consumer packages that still implement the pre-`InstallContext` install-step signatures
 - documented the new security-governance declaration surface, DTOs, registries, and validation vocabulary in the package README
+- documented the foundation HTTP middleware declaration surface, host bridge install step, and bridge doctor check in the package README
 
 ## [0.1.0] - 2026-03-30
 

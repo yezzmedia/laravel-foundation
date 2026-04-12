@@ -52,6 +52,17 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - documented the new security-governance declaration surface, DTOs, registries, and validation vocabulary in the package README
 - documented the foundation HTTP middleware declaration surface, host bridge install step, and bridge doctor check in the package README
 
+## [0.1.1] - 2026-04-12
+
+### Fixed
+
+- shipped the security-governance and HTTP middleware declaration contracts that downstream `0.1.x` packages already rely on at runtime
+- shipped the supporting security registries and HTTP middleware registry runtime that package discovery now expects during bootstrap
+
+### Documentation
+
+- documented the compatibility hotfix release for downstream ops package consumers
+
 ## [0.1.0] - 2026-03-30
 
 ### Added

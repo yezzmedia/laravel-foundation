@@ -52,6 +52,12 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - documented the new security-governance declaration surface, DTOs, registries, and validation vocabulary in the package README
 - documented the foundation HTTP middleware declaration surface, host bridge install step, and bridge doctor check in the package README
 
+## [0.2.0] - 2026-06-30
+
+### Changed
+
+- Bumped minimum `yezzmedia/laravel-foundation` dependency to `^0.2`
+
 ## [0.1.1] - 2026-04-12
 
 ### Fixed

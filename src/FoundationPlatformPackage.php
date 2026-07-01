@@ -10,6 +10,9 @@ use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Doctor\FoundationHttpMiddlewareBridgeConfiguredCheck;
 use YezzMedia\Foundation\Install\ConfigureHttpMiddlewareBridgeInstallStep;
+use YezzMedia\Foundation\Install\EnsureAdminUserExistsInstallStep;
+use YezzMedia\Foundation\Install\EnsureMigrationsAreCurrentInstallStep;
+use YezzMedia\Foundation\Install\EnsureTailwindIsBuiltInstallStep;
 
 /**
  * Describes the foundation package inside the platform registry itself.
@@ -31,6 +34,9 @@ final class FoundationPlatformPackage implements DefinesInstallSteps, PlatformPa
     {
         return [
             new ConfigureHttpMiddlewareBridgeInstallStep,
+            new EnsureMigrationsAreCurrentInstallStep,
+            new EnsureTailwindIsBuiltInstallStep,
+            new EnsureAdminUserExistsInstallStep,
         ];
     }
 

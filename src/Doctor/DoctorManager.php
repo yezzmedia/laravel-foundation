@@ -60,11 +60,23 @@ class DoctorManager
     {
         return collect($this->checks())
             ->map(function (DoctorCheck $check): DoctorResult {
-                $result = $check->run();
+                try {
+                    $result = $check->run();
 
-                $this->ensureValidResult($check, $result);
+                    $this->ensureValidResult($check, $result);
 
-                return $result;
+                    return $result;
+                } catch (InvalidPackageDefinitionException $e) {
+                    throw $e;
+                } catch (\Throwable $e) {
+                    return new DoctorResult(
+                        key: $check->key(),
+                        package: $check->package(),
+                        status: 'failed',
+                        message: $e->getMessage(),
+                        isBlocking: false,
+                    );
+                }
             })
             ->values();
     }

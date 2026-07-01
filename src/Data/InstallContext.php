@@ -18,6 +18,9 @@ final readonly class InstallContext
         public bool $configureAccessAudit = false,
         public bool $configureAudit = false,
         public bool $configureHttpMiddlewareBridge = false,
+        public bool $checkFrontendAssets = false,
+        public bool $checkMigrations = false,
+        public bool $checkAdminUser = false,
         public array $auditPackages = [],
     ) {}
 

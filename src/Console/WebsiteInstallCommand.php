@@ -43,6 +43,9 @@ class WebsiteInstallCommand extends Command
             configureAccessAudit: $configureAccessAudit,
             configureAudit: $configureAudit || $configureAccessAudit,
             configureHttpMiddlewareBridge: (bool) $this->option('configure-http-middleware-bridge'),
+            checkFrontendAssets: true,
+            checkMigrations: true,
+            checkAdminUser: true,
             auditPackages: $selectedAuditPackages,
         );
 
